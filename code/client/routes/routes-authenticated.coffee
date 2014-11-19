@@ -1,7 +1,7 @@
-Router.route('index',
-  path: '/'
+Router.route('dashboard',
+  path: '/dashboard'
   template: 'index'
   onBeforeAction: ->
-    # Code to run before route goes here.
+    Session.set 'currentRoute', 'dashboard'
     @next()
 )
