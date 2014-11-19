@@ -12,7 +12,7 @@
 ###
 checkUserLoggedIn = ->
   if not Meteor.loggingIn() and not Meteor.user()
-    Router.go '/login'
+    Router.go '/'
   else
     @next()
 
@@ -23,12 +23,13 @@ checkUserLoggedIn = ->
 ###
 userAuthenticated = ->
   if not Meteor.loggingIn() and Meteor.user()
-    Router.go '/'
+    Router.go '/dashboard'
   else
     @next()
 
 # Run Filters
 Router.onBeforeAction checkUserLoggedIn, except: [
+  'index',
   'signup',
   'login',
   'recover-password',
@@ -36,6 +37,7 @@ Router.onBeforeAction checkUserLoggedIn, except: [
 ]
 
 Router.onBeforeAction userAuthenticated, only: [
+  'index',
   'signup',
   'login',
   'recover-password',
