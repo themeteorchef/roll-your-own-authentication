@@ -6,23 +6,37 @@
 Meteor.startup(->
   # Function: Create Service Configuration
   # Here, we create a function to help us reset and create our third-party login
-  # configurations to keep our code DRY.
+  # configurations to keep our code as DRY as possible.
   createServiceConfiguration = (service,clientId,secret)->
     ServiceConfiguration.configurations.remove(
       service: service
     )
-    if service == 'facebook'
-      ServiceConfiguration.configurations.insert(
-        service: service
-        appId: clientId
-        secret: secret
-      )
-    else
-      ServiceConfiguration.configurations.insert(
+    # Note: here we have to do a bit of light testing on our service argument.
+    # Facebook and Twitter use different key names for their OAuth client ID,
+    # so we need to update our passed object accordingly before we insert it
+    # into our configurations.
+    config =
+      generic:
         service: service
         clientId: clientId
         secret: secret
-      )
+      facebook:
+        service: service
+        appId: clientId
+        secret: secret
+      twitter:
+        service: service
+        consumerKey: clientId
+        secret: secret
+
+    # To simplify this a bit, we make use of a case/switch statement. This is
+    # a shorthand way to say "when the service argument is equal to <x> do this."
+    # This is also available in plain JavaScript, but the CoffeeScript version
+    # is a bit more "literal" and easier to read.
+    switch service
+      when 'facebook' then ServiceConfiguration.configurations.insert(config.facebook)
+      when 'twitter' then ServiceConfiguration.configurations.insert(config.twitter)
+      else ServiceConfiguration.configurations.insert(config.generic)
 
   ###
     Configure Third-Party Login Services
