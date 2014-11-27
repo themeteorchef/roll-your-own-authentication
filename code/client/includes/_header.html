@@ -14,16 +14,11 @@
 	    	{{#if currentUser}}
 	      <ul class="nav navbar-nav navbar-right">
 	        <li class="dropdown">
-	          <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{currentUser.emails.[0].address}} <span class="caret"></span></a>
+	          <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{currentUser.profile.name}} <span class="caret"></span></a>
 	          <ul class="dropdown-menu" role="menu">
 	            <li class="logout"><a href="#">Logout</a></li>
 	          </ul>
 	        </li>
-	      </ul>
-	      {{else}}
-	      <ul class="nav navbar-nav navbar-right">
-	        <li class="{{currentRoute 'login'}}"><a href="{{pathFor 'login'}}">Login</a></li>
-	        <li class="{{currentRoute 'signup'}}"><a href="{{pathFor 'signup'}}">Sign Up</a></li>
 	      </ul>
 	      {{/if}}
 	    </div> <!-- end .navbar-collapse -->
