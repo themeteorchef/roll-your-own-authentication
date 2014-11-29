@@ -13,12 +13,16 @@
 	    <div class="collapse navbar-collapse">
 	    	{{#if currentUser}}
 	      <ul class="nav navbar-nav navbar-right">
+					{{#if userIdentity currentUser._id}}
 	        <li class="dropdown">
-	          <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{currentUser.profile.name}} <span class="caret"></span></a>
+	          <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{userIdentity currentUser._id}} <span class="caret"></span></a>
 	          <ul class="dropdown-menu" role="menu">
 	            <li class="logout"><a href="#">Logout</a></li>
 	          </ul>
 	        </li>
+					{{else}}
+						<li class="logout"><a href="#">Logout</a></li>
+					{{/if}}
 	      </ul>
 	      {{/if}}
 	    </div> <!-- end .navbar-collapse -->

@@ -29,13 +29,27 @@ Template.signInWithEmailModal.rendered = ->
       # Take the correct path according to what the user clicked and
       # our session variable is equal to.
       if createOrSignIn == "create"
-        Accounts.createUser(user, (error)->
+        # Before we do the insert, we call to the server to validate our email
+        # address. This isn't *required*, but it's a good feature to have. This
+        # allows us to ensure that users are signing up with legitimate email
+        # addresses and not addresses that will bounce.
+        Meteor.call 'validateEmailAddress', user.email, (error,response)->
           if error
+            # If we get an error, let our user know.
             alert error.reason
           else
-            # If all works as expected, we need to hide our modal backdrop (lol, Bootstrap).
-            $('.modal-backdrop').hide()
-        )
+            if response.error
+              # If we get an error from our method, alert to the user.
+              alert response.error
+            else
+              # If all is well, create the user's account!
+              Accounts.createUser(user, (error)->
+                if error
+                  alert error.reason
+                else
+                  # If all works as expected, we need to hide our modal backdrop (lol, Bootstrap).
+                  $('.modal-backdrop').hide()
+              )
       else
         Meteor.loginWithPassword(user.email, user.password, (error)->
           if error
