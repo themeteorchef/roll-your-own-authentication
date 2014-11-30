@@ -4,6 +4,8 @@
 ###
 
 Meteor.startup(->
+  # Environment Variable: MAIL_URL
+  process.env.MAIL_URL = "smtp://postmaster%40demo.themeteorchef.com:1a443c725fe281576f5aebdced641cda@smtp.mailgun.org:587"
   # Function: Create Service Configuration
   # Here, we create a function to help us reset and create our third-party login
   # configurations to keep our code as DRY as possible.

@@ -22,5 +22,5 @@ accounts-twitter
 meteorhacks:ssr
 service-configuration
 http
-meteorhacks:async
+email
 
