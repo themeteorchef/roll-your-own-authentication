@@ -275,6 +275,8 @@ Because Meteor is itself Node-based and they make use of the futures library in 
 
 So, why do we need this? Our next step (after using `check()` like upstanding citizens) is to make use of the `http` package we installed earlier. Here, we call on the Kickbox API (specifically their `/verify` method), passing our email address and super secret API key. **Note**: you'll need to sign up for Kickbox and generate your own API key to get this working. This step isn't required, but highly recommended for keeping your user list clean.
 
+Futures comes into play because all `HTTP.call` functions are run _[asynchronously](http://stackoverflow.com/a/4560233)_. This means that the code runs and Meteor keeps on truckin' instead of waiting for it to finish. What we're really looking for here is for Meteor to hit this function and _wait_ until it's finished. We want to wait because the answer we get back from Kickbox will determine whether we allow our user to sign up, or kick em' to the curb. Okay, not that harsh, but it _will_ allow us to notify the user if they're trying to sign up with a bum email.
+
 - Modal
 - Dual Button Events
 - Validation
