@@ -130,9 +130,9 @@ Template.index.events(
 ```
 Nice, right? All of our events look fairly similar here. What we're doing is looking for a click event on each of our buttons and calling to the login service associated with it. The big thing to pay attention to is that, despite all being realtively similar, Meteor uses a convention of specifying the name of the service `Meteor.loginWithService`.
 
-But what about Twitter? Ah yes, our dear friend Twitter. As we'll continue to learn throughout this recipe, Twitter doesn't exactly play friendly with our game plan. Maybe not so dramatic, but notice that we're missing the `requestPermissions: ['email']` part for Twitter. This is because their OAuth implementation doesn't offer up email addresses, or as we learned earlier, the ability to request _any_ permissions. Wonky. We'll focus on how to handle that in just a bit.
+But what about Twitter? Ah yes, our dear friend Twitter. As we'll continue to learn throughout this recipe, Twitter doesn't exactly play friendly with our game plan. Maybe not so dramatic, but notice that we're missing the `requestPermissions: ['email']` part for Twitter. This is because their OAuth implementation doesn't offer up email addresses, or as we learned earlier, the ability to request _any_ permissions. Wonky. Don't worry, we'll cover how to handle that so you're not caught off guard in a bit.
 
-Next, let's take a look at how we'll handle email. This is a bit more tricky as we'll need to handle both log in and sign up at the same time.
+There's one more step for setting up our third-party logins which we'll cover later in the recipe. For now, let's take a look at how we'll handle a sign in with email. This is a bit more tricky as we'll need to handle both log in and sign up at the same time.
 
 ### Sign In With Email
 
@@ -211,19 +211,7 @@ submitHandler: ->
 
   if createOrSignIn == "create"
     Meteor.call 'validateEmailAddress', user.email, (error,response)->
-      if error
-        # If we get an error, let our user know.
-        alert error.reason
-      else
-        if response.error
-          alert response.error
-        else
-          Accounts.createUser(user, (error)->
-            if error
-              alert error.reason
-            else
-              $('.modal-backdrop').hide()
-          )
+      # We'll handle any errors and create the user's account here.
   else
     Meteor.loginWithPassword(user.email, user.password, (error)->
       if error
@@ -232,8 +220,6 @@ submitHandler: ->
         $('.modal-backdrop').hide()
     )
 ```
-
-Woah smokies! This is a lot of code. Let's step through it and look at what each part is doing.
 
 First up, we find that we're assigning our dual-button session variable whatchamacalit to a local variable called `createOrSignIn`. Next, after assigning the value of our email and password inputs to an object, we test the value of our `createOrSignIn` variable to see where we should send the user next. If our variable equals `create` (set by our click on the "Create Account" button in our modal), we set the user up with a new account. If the user has clicked "Sign In" instead, we simply log them in. Sweet!
 
@@ -267,22 +253,155 @@ Meteor.methods(
     validateEmail.wait()
 )
 ```
-What the heck is all of this? Well, because email validation is a pain in the butt and for the sake of time, here we're making use of a third-party email validation service. [Kickbox](http://kickbox.io), which was recommended by the folks at [Mailgun](http://mailgun.com), is an API service that allows you to test email addresses for their existence. There's a lot of technical mumbo jumbo going on there, so we'll have to default to our "[magic](http://img.pandawhale.com/post-41538-Shia-Labeouf-Magic-gif-Imgur-vZSU.gif)" explanation.
+What the heck is all of this? Well, because email validation is a pain in the butt and for the sake of time, here we're making use of a third-party email validation service. [Kickbox](http://kickbox.io), which was recommended by the folks at [Mailgun](http://mailgun.com), is an API service that allows you to test email addresses for their existence.
 
-So how exactly are we using it here? First, you'll notice that we're creating a variable called `Future` and doing an `Npm.require` to `('fibers/future')`. This is giving us access to the [Future's](https://www.npmjs.org/package/fibers#futures) portion of the [Fibers NPM package](https://www.npmjs.org/package/fibers) which we'll use to handle the flow of our HTTP method. What's unique about this is that if you've ever added an NPM package to your app before, you'l notice that we _didn't_ use a package like `meteorhacks:npm` or create our own local package to import from NPM. What gives?
+So how exactly are we using it here? First, you'll notice that we're creating a variable called `Future` and doing an `Npm.require` to `('fibers/future')`. This is giving us access to the [Future's](https://www.npmjs.org/package/fibers#futures) portion of the [Fibers NPM package](https://www.npmjs.org/package/fibers) which we'll use to handle the flow of our HTTP method. 
+
+What's unique about this is that if you've ever added an NPM package to your app before, you'l notice that we _didn't_ use a package like `meteorhacks:npm` or create our own local package to import from NPM. What gives?
 
 Because Meteor is itself Node-based and they make use of the futures library in Meteor's core code, it's technically already loaded into our application. Here, a simple require lets our app know that we'd like to make use of it. Nifty!
 
 So, why do we need this? Our next step (after using `check()` like upstanding citizens) is to make use of the `http` package we installed earlier. Here, we call on the Kickbox API (specifically their `/verify` method), passing our email address and super secret API key. **Note**: you'll need to sign up for Kickbox and generate your own API key to get this working. This step isn't required, but highly recommended for keeping your user list clean.
 
-Futures comes into play because all `HTTP.call` functions are run _[asynchronously](http://stackoverflow.com/a/4560233)_. This means that the code runs and Meteor keeps on truckin' instead of waiting for it to finish. What we're really looking for here is for Meteor to hit this function and _wait_ until it's finished. We want to wait because the answer we get back from Kickbox will determine whether we allow our user to sign up, or kick em' to the curb. Okay, not that harsh, but it _will_ allow us to notify the user if they're trying to sign up with a bum email.
+Futures comes into play because all `HTTP.call` functions are run _[asynchronously](http://stackoverflow.com/a/4560233)_. This means that the code runs and Meteor keeps on truckin' instead of waiting for it to finish. What we're really looking for here is for Meteor to hit this function and _wait_ until it's finished. 
 
-- Modal
-- Dual Button Events
-- Validation
-- Call to Email Validation on Server
+We want to wait because the answer we get back from Kickbox will determine whether we allow our user to sign up, or kick em' to the curb. Okay, not that harsh, but it _will_ allow us to notify the user if they're trying to sign up with a bum email.
+
+<p class="block-header">/server/email/validation.coffee</p>
+```.lang-coffeescript
+validateEmail = new Future()
+[...]
+,(error,response)->
+  if error
+    validateEmail.return(error)
+  else
+    if response.data.result == "invalid" or response.data.result == "unknown"
+      validateEmail.return(
+        error: "Sorry, your email was returned as invalid. Please try another address."
+      )
+    else
+      validateEmail.return(true)
+)
+validateEmail.wait()
+```
+A few things to pay attention to. The first is actually the last. Where in a normal function we'd just return some value, here, we're returning our Future `validateEmail` with a `.wait()` method invoked on it `validateEmail.wait()`. What this is doing is telling the Future's library to pause the running of the script until it receives a value. When it does, it continues running returning whatever value it was passed.
+
+Up a little bit into our code, we can see that we're making use of our Future's `.return()` method to pass it some data based on the outcome of our `HTTP` request. We test for two instances (three, technicaly): first, if the `HTTP` request throws an error (e.g. a bad URL, no response from the API, etc.) we want to grab that and return it. 
+
+Next, if the request does go through and we get a _response_ from the server, we test to see whether the value of the `response.data.result` key is either `invalid` or `unknown`. These keys/values are specific to Kickbox and tell us whether the email we sent this is legitimate. Here, we test for a falsey value _first_ returning an error if the email is bad. If not, we simply return a boolean `true` value.
+
+<p class="block-header">/client/controllers/public/sign-in-with-email-modal.coffee</p>
+```.lang-coffeescript
+if error
+  alert error.reason
+else
+  if response.error
+    alert response.error
+  else
+    Accounts.createUser(user, (error)->
+      if error
+        alert error.reason
+      else
+        $('.modal-backdrop').hide()
+    )
+```
+Back on the client and inside of our `Meteor.call 'validateEmailAddress'` function, we watch on the `error	` and `response` arguments. Here, if we get an error (e.g. from the API) we alert it to the user. We do the same if our _response_ was set to an error (i.e. the one we defined, "Sorry, your email..."). Finally, if no errors are present, we assume the email is valid and create the user's account. 
+
+Awesome! With this in place we've actually completed getting user's signed in with email. Next, we need to revisit our third-party sign in's and get them configured so they will actually work.
+
 ### Configuring Third-Party Services
-- Setting up APIs.
+Because our third-party sign in's are relying on _external_ services outside of our control, we need a way to identify our application with those services so they know their user's are safe. Fortunately for us, some smarter folks in the past came up with a convenient system known as OAuth, or, "open authentication":
+
+> OAuth is an open standard to authorization. OAuth provides client applications a 'secure delegated access' to server resources on behalf of a resource owner. It specifies a process for resource owners to authorize third-party access to their server resources without sharing their credentials.
+
+— via ["OAuth" on Wikipedia](http://en.wikipedia.org/wiki/OAuth)
+
+What this essentially means is that by providing a service with a unique token for our application, we can make requests for information on behalf of the user. So for things like signing in, we can allow the user to use their email/password combination from another service (e.g. Facebook). We never store or touch that email/password, because OAuth implements a permissions system wherein users are prompted to log in to and accept or deny our access to their credentials. Pretty cool, right?
+
+So what we need to accomplish now is the "providing a service with a unique token" part. This is done by making use of the `service-configuration` package we installed earlier. By adding this, we gain access to a set of functions that allow us to update Service Configurations in the database: `ServiceConfiguration.configurations.remove()` and `ServiceConfiguration.configurations.insert()`. 
+
+Together, these two allow us to set our OAuth `clientId` and `secret` in the database. Calling back to our client code, these values are referenced by Meteor when we call any of the `Meteor.loginWith<Service>` functions. Let's see how we get them setup.
+
+```.lang-coffeescript
+createServiceConfiguration = (service,clientId,secret)->
+  ServiceConfiguration.configurations.remove(
+    service: service
+  )
+
+  config =
+    generic:
+      service: service
+      clientId: clientId
+      secret: secret
+    facebook:
+      service: service
+      appId: clientId
+      secret: secret
+    twitter:
+      service: service
+      consumerKey: clientId
+      secret: secret
+
+  switch service
+    when 'facebook' then ServiceConfiguration.configurations.insert(config.facebook)
+    when 'twitter' then ServiceConfiguration.configurations.insert(config.twitter)
+    else ServiceConfiguration.configurations.insert(config.generic)
+```
+
+To keep our code DRY, we've setup a function `createServiceConfiguration()` that will wrap the two `ServiceConfiguration` functions (via Meteor) above. We're doing this because for each service we want to support, we'd need to run both of these functions. Putting them into a single function and simply passing over the parameters they need access to saves us a few lines of code. Nice!
+
+Inside of our function, first [per Meteor's documentation](), we run our `ServiceConfiguration.configurations.remove()` function to "reset" any existing configurations in our app. Because this will all run on startup, we want to ensure that we're clearing out any _old_ configurations. This is nice for when you're running a production application and reset your API keys. Having this ensures that when you update those keys in your code, they actually "stick."
+
+Next, we present a strange combo: an object labeled `config` and then a `switch/case` statement that references the `config` object. What is this?
+
+By default, OAuth applications are required to provide two keys to developers: `clientId` and a `secret` key. The `clientId` acts as the identifier for your specific application, whereas the `secret` acts like your password (you as the developer, not your user). When we call on an OAuth service, we pass these keys to identify ourselves. 
+
+What you'll notice above is that we have three "configurations": `generic`, `facebook`, and `twitter`. If you have a keen eye, you'll notice that the only difference between the three is the `clientId` field. This setup accounts for Facebook and Twitter's variation on the naming of these keys. 
+
+Here, we use our `switch/case` statement to look at the name of the `service` passed as an argument to our function. Depending on what is passed, we then run `ServiceConfiguration.configurations.insert(config.service)` function, passing the "configuration" from above. What this achieves is having the correct key/value pairs and names in place so that when Meteor calls on a given service, what it sends over (again, the `clientId` and `secret`) match the naming conventions _of that service_. Said another way: [you say tomayto, I say tomahto](http://youtu.be/zZ3fjQa5Hls?t=1m30s).
+
+Okay, so we've got this all setup, but where and how do we call it? Just beneath our function declaration you'll find four calls to our `createServiceConfiguration()` function:
+
+```.lang-coffeescript
+  createServiceConfiguration('facebook', 'Insert your appId here.', 'Insert your secret here.')
+  createServiceConfiguration('github', 'Insert your clientId here.', 'Insert your secret here.')
+  createServiceConfiguration('google', 'Insert your clientId here.', 'Insert your secret here.')
+  createServiceConfiguration('twitter', 'Insert your consumerKey here.', 'Insert your secret here.')
+```
+Just like we setup our function to expect, we pass three arguments: `service`, `clientId`, and `secret`. Isn't this nice? Instead of having the same code copied over and over, we get a nice one-liner for configuring each service. But...where do we get these `clientId` and `secret` keys? Good question!
+
+Each service has their own system for registering your application and generating keys. Admittedly, some are really easy and others are a bit confusing. To get you on the right track, depending on the services you'd like to support you'll need to visit the following links:
+
+- [Facebook Developers](https://developers.facebook.com/apps/)
+- [GitHub Applications](https://github.com/settings/applications)
+- [Google Developers Console](https://console.developers.google.com)
+- [Twitter Apps](https://apps.twitter.com/)
+
+At each site you'll need to do two things:
+- Register your application and obtain a `clientId` and `secret`.
+- Set the correct URLs for that service.
+
+While all of these processes are fairly similar, we should call attention to a few things that can be confusing.
+
+#### Configuring Facebook
+When it comes to Facebook, getting our `appId` and `secret` is realtively straightforward, but we need to make sure we get the `App Domain` configured correctly. The `App Domain` is the URL that Facebook expects requests to be coming from in association with the `appId` and `secret` you've specified in your code. If the values set in your application code do not match the values in the dashboard on Facebook, you'll get an error.
+
+To get this working on Facebook, once you've setup your application, head over to the dashboard your your application `https://developers.facebook.com/apps/<App ID>/dashboard/` and click on the "Settings" tab on the left. From here, you'll need to click the "Add Platform"  button (selecting Website), and specify your "Site URL." 
+
+![Facebook Application Configuration](http://cl.ly/Ykoq/Image%202014-12-01%20at%209.49.26%20AM.png)
+
+The value of this needs to be the full URL of your application, e.g. `http://localhost:3000`. Once you've set this up, you'll need to go up to the `App Domain` field and specify _just the domain_ of the application, e.g. `localhost`. These two values need to match the exact URL of your environment. For Facebook, you can only specify one Site URL per application, meaning when you want to go into production, you'll need to update the Site URL and App Domain values. 
+
+Alternatively, you can also setup a _separate_ application for local development and another for production. Just make sure to keep track of your `clientId` and `secret` keys for each of your configurations.
+
+#### Configuring GitHub
+#### Configuring Google
+#### Configuring Twitter
+
+
+
+
+
 ### Sending Welcome Email
 - Configuring email service.
 - Getting correct email address on signup.
@@ -301,12 +420,4 @@ Futures comes into play because all `HTTP.call` functions are run _[asynchronous
 - Service Configuration
 - At some point, make a note about security. We won't touch on it in here, but considerations will need to be made re: creating accounts using social login.
 - Stupid: When logged in, add a title "Annnd here's what you've been waiting for fellas."
-# Accounts Password
-# Email Confirmation
-# Third-Party Accounts Configuration
-# Accounts Facebook
-# Accounts GitHub
-# Accounts Google
-# Accounts Twitter
 # Logout
-# Reset Password
