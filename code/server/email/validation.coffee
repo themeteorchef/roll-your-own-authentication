@@ -19,7 +19,7 @@ Meteor.methods(
     HTTP.call("GET", "https://api.kickbox.io/v1/verify",
       params:
         email: address
-        apikey: "a2e66d2c524f5fce691166a0b2aab125964123504efe56673197dee302dadb14"
+        apikey: "Enter your own Kickbox API key here."
     ,(error,response)->
       if error
         validateEmail.return(error)
