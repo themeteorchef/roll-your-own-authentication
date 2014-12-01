@@ -3,7 +3,6 @@
   Template: /client/views/public/index.html
 ###
 
-
 # Events
 Template.index.events(
   'click .btn-facebook': ->
@@ -28,7 +27,6 @@ Template.index.events(
     )
 
   'click .btn-twitter': ->
-    # FIX: OAuth is failing to validate for this fella.
     Meteor.loginWithTwitter((error)->
       console.log error.reason if error
     )
