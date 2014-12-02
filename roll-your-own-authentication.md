@@ -378,10 +378,10 @@ Each service has their own system for registering your application and generatin
 - [Twitter Apps](https://apps.twitter.com/)
 
 At each site you'll need to do two things:
-- Register your application and obtain a `clientId` and `secret`.
-- Set the correct URLs for that service.
+1. Register your application and obtain a `clientId` and `secret`.
+2. Set the correct URLs for that service.
 
-While all of these processes are fairly similar, we should call attention to a few things that can be confusing.
+While all of these processes are fairly similar, we should call attention to a few things that can be confusing. Let's take a look at some of the pitfalls we might run into while getting this all set up.
 
 #### Configuring Facebook
 When it comes to Facebook, getting our `appId` and `secret` is realtively straightforward, but we need to make sure we get the `App Domain` configured correctly. The `App Domain` is the URL that Facebook expects requests to be coming from in association with the `appId` and `secret` you've specified in your code. If the values set in your application code do not match the values in the dashboard on Facebook, you'll get an error.
@@ -392,15 +392,48 @@ To get this working on Facebook, once you've setup your application, head over t
 
 The value of this needs to be the full URL of your application, e.g. `http://localhost:3000`. Once you've set this up, you'll need to go up to the `App Domain` field and specify _just the domain_ of the application, e.g. `localhost`. These two values need to match the exact URL of your environment. For Facebook, you can only specify one Site URL per application, meaning when you want to go into production, you'll need to update the Site URL and App Domain values. 
 
-Alternatively, you can also setup a _separate_ application for local development and another for production. Just make sure to keep track of your `clientId` and `secret` keys for each of your configurations.
+Alternatively, you could also setup a _separate_ application for local development and another for production. Just make sure to keep track of your `clientId` and `secret` keys for each of your configurations.
 
 #### Configuring GitHub
+![GitHub Application Configuration](http://cl.ly/YmpL/Image%202014-12-02%20at%208.46.04%20AM.png)
+
+GitHub makes things a little bit easier, though, we still want to pay attention to the `Callback URL` we're setting. Just like Facebook, this URL needs to match the _current domain_ of your application. If we're on `http://localhost:3000` it should be that, if we're on `http://doncarltonsales.com` it should be that. Without it, you'll get a mismatched URI error and get a one-way ticket to frown town.
+
 #### Configuring Google
+Despite having a slightly confusing interface for managing your applications, Google isn't too bad to get setup. Once you've created your application, you'll want to access the `Credentials` menu item underneath the `APIs & auth` heading, clicking the "Create new Client ID" button.
+![Google Developers Console](http://cl.ly/Ym9z/Image%202014-12-02%20at%208.49.05%20AM.png)
+
+On the resulting popup, you'll want to select Web Application for Application Type and then fill out the subsequent information for the "consent screen" (this is the popup your users will be greeted with asking for permission to access their account). Once you've filled this out, you'll be greeted with a popup to setup two things: "Authorized JavaScript Origins" (spooky!) and "Authorized Redirect URIs."
+
+The first, origins, is simply the URLs where Google should expect requests to come from. Unlike our previous services, they actuall _do_ let you specify multiple URLs (one per line). Here, you'll want to place your `localhost` URL and your `production` URL.
+
+![Google Developers Console](http://cl.ly/YmBJ/Image%202014-12-02%20at%208.55.26%20AM.png)
+
+In the next box, Redirect URIs, you'll want to place the URLs that Google will send the user back to _after_ they've been authenticated. You'll notice that in our example image, we're appending a funky string to the end of the two URLs we set for `localhost` and `production`, what gives?
+
+Well, although it's not documented, Meteor automatically sends Google OAuth requests back to the root domain of your application, appending `_oauth/google?close` onto the end of it. [Cute](http://media1.giphy.com/media/T3Vx6sVAXzuG4/giphy.gif)! In order to compensate for this, we need to make sure that we update both of the URLs we specified for our JavaScript Origins to include this, so:
+
+```.lang-bash
+http://localhost:3000/_oauth/google?close
+http://yourproductionsite.meteor.com/_oauth/google?close
+```
+
+Once those are set, click "Create Client ID" and you should get your `clientId` and `secret`! Wonderful. 
+
 #### Configuring Twitter
 
+So, Twitter. We'll give them a hard time but they're actually quite pleasant to set up. Fortunately, their OAuth application registration is quick and painless, we just want to call attention to two things. Both pertain to how we setup our Callback URL. First, if you're looking to test your application on `localhost`, Twitter won't let you! Ha! Where the other services would let us set our Callback URL as `http://localhost:3000`, Twitter is a straight up thug and says "_no_." 
 
+Instead when we're working on `localhost` we need to use the less familiar but equivalent `http://127.0.0.1:3000`. If this is gibberish to you, `127.0.0.1` is the default local IP address of your computer, which is the same as `http://localhost:3000`. `localhost` is merely a convenient shorthand (like a domain name on a website). Great, so we can do this, but we're not done just yet!
 
+![Twitter Application Management](http://cl.ly/YmBp/Image%202014-12-02%20at%209.27.40%20AM.png)
 
+Remember that wack-a-doodle string Google needed at the end of our Callback URL? Twitter needs it, [too](http://youtu.be/gqoTFHbU8aU?t=9s)! This time around it looks like this: `http://127.0.0.1:3000/_oauth/twitter?close`. Not terrible. Of course, the same rules apply here: if you're moving into production, you'll need to swap `127.0.0.1:3000` with your _production domain_, or, setup a separate OAuth application specifically for production.
+
+<div class="note">
+  <h3>A quick note</h3>
+  <p>Holy cow! We're in the home stretch. How about we take a break for some <a href="https://www.youtube.com/watch?v=na9ZZ4ZjVa8">calisthenics</a>?</p>  
+</div>
 
 ### Sending Welcome Email
 - Configuring email service.
