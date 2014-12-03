@@ -536,8 +536,30 @@ we need a way to render our email template on the server. Enter the `meteorhacks
 
 The first, `compileTemplate()` is where we define the name of our template `'welcomeEmail'` and pass a call to `Assets.getText()` with the path of our email template. What's this about? [Recall from Recipe #1](http://themeteorchef.com/recipes/exporting-data-from-your-meteor-application) that this function simply pulls in the _text_ of a file we specify. The _path_ it looks at is relative to the `/private` directory in our project root. So here, we're importing our email from `/private/email/welcome-email.html`.
 
-Once we have our template defined and available as `'welcomeEmail'` for `ssr` to use, we call the `render()` method, again passing the name of our template `'welcomeEmail'` along with the values we'd like to make available as template variables (e.g. `{{email}}`) in our email. Here we pass three value: `email`, `name`, and `url`. The first two, `email` and `name`, are an
+Once we have our template defined and available as `'welcomeEmail'` for `ssr` to use, we call the `render()` method, again passing the name of our template `'welcomeEmail'` along with the values we'd like to make available as template variables (e.g. `{{name}}`) in our email. Here we pass two values: `name` and `url`. The first, `name`, is our attempt to personalize the user's email. If we open up our email template, we can see how this is used:
 
+```.lang-markup
+{{#if name}}
+  Hey there, {{name}}! Welcome aboard!
+{{else}}
+  Hey there! Welcome aboard!
+{{/if}}
+```
+
+Simple, but a nice touch. Because we're using good ol' fashioned Handlebars templates, we can make use of the handy `{{if}}` statement to check if `name` is set. So cool! Further down in the email, we can also find our use of the `url` key set above:
+
+```.lang-markup
+<a href="{{url}}" class="btn-primary" style="[...]">Check Out DCS</a>
+```
+
+Here we use our URL value to link the user back to our application.
+
+The last part of our code is focused on sending our email via the `Email.send()` method which was given to us when we installed the `email` package earlier in the recipe. We quickly set some obvious parameters: `to`, `from`, and `subject`, finishing with the key `html` which is set to the `emailTemplate` variable containing the result of our call to `SSR.render()`, or, our template updated with the values we passed to it!
+
+<div class="note">
+<h3>A quick note</h3>
+<p>We're going to skip over configuring our email address in Meteor to save time. Recall that in order to do this you need to make use of the MAIL_URL environment variable in your server code. You can learn more about environment variables <a href="http://www.meteorpedia.com/read/Environment_Variables">here</a>. Also, check out <a href="http://themeteorchef.com/recipes/adding-a-beta-invitation-system-to-your-meteor-application">Recipe #2</a> where we go into detail on setting this up.</p>
+</div>
 
 - Configuring email service.
 - Getting correct email address on signup.
@@ -545,6 +567,99 @@ Once we have our template defined and available as `'welcomeEmail'` for `ssr` to
 - Quick mention of email template.
 
 ### Displaying User Email on Template
+
+Good, good, good. We're onto our last step which is something simple but important: displaying the user's email on the template. Once our user's are logged in, we want to be able to get display their email in our dropdown menu where they can "logout."
+
+To accomplish this, we need to reprise a bit of our code from earlier, the `determineEmail()` function. This time, however, we're going to wrap it in a UI helper so we can make use of it in our template. Let's take a look:
+
+```.lang-coffeescript
+UI.registerHelper('userIdentity', (userId) ->
+  getUser = Meteor.users.findOne({_id: userId})
+  if getUser.emails
+    getUser.emails[0].address
+  else if getUser.services
+    services = getUser.services
+    getService = switch
+      when services.facebook then services.facebook.email
+      when services.github then services.github.email
+      when services.google then services.google.email
+      when services.twitter then services.twitter.screenName
+      else false
+    getService
+  else
+    getUser.profile.name
+)
+```
+
+Almost identical to what we did earlier (so much so that you can score easy refactor points in your own app by making this a global function). There are two big difference here: first, we don't have access to the user document like we did earlier, so we need to take a passed `userId` argument and look up the user in the database. Our other difference is for Twitter. Recall that they _do not_ give us an email to work with, so, instead we opt for the user's `screenName` or `@name` (e.g. `@themeteorchef`).
+
+To make use of the helper over in our template code, we can now call `{{userIdentity}}` passing the current user's ID as a parameter:
+
+```.lang-markup
+{{#if userIdentity currentUser._id}}
+  <li class="dropdown">
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{userIdentity currentUser._id}} <span class="caret"></span></a>
+    <ul class="dropdown-menu" role="menu">
+      <li class="logout"><a href="#">Logout</a></li>
+    </ul>
+  </li>
+{{else}}
+  <li class="logout"><a href="#">Logout</a></li>
+{{/if}}
+```
+
+Here we do a bit of piggybacking on Meteor's `{{currentUser}}` template variable, looking up the `_id` value to send back to our helper. We check for existence of the value for good measure and if it exists, output it to the template.
+
+We're all don...no we're not!
+
+This is _super_ important. Because we're interacting with our user's data, we need to be careful about what data is getting to the client. To control this, we've setup a publication on the server to specify _exactly_ what we need, along with a subscription in our `/dashboard` view.
+
+```.lang-coffeescript
+Meteor.publish('userData', ->
+  currentUser = this.userId
+  if currentUser
+    Meteor.users.find({_id: currentUser}, {
+      fields: {
+        "services.facebook.email": 1
+        "services.github.email": 1
+        "services.google.email": 1
+        "services.twitter.screenName": 1
+        "emails.address[0]": 1
+        "profile": 1
+      }
+    })
+  else
+    this.ready()
+  )
+```
+
+We've kept things a bit verbose here so we can see what's happening. First, we set a variable `currentUser` equal to `this.userId` which is a convenient value set for us by Meteor so we don't have to pass our user's ID to our publication. Next, we test for the existence of that value and if it's available, we publish the data for our _current_ user and specifically request the fields that we want. Notice that because we only need access to their profile and email address, we're only request those fields. This is important because if we _didn't_ do this, we'd be sending the user's **entire document to the client**. This is a big no no.
+
+Phew. Alright, so we're safe there. The _very last thing_ we need to do is ensure that we can actually _see_ the data we're publishing. In our `/dashboard` route definition:
+
+```.lang-coffeescript
+Router.route('dashboard',
+  path: '/dashboard'
+  template: 'dashboard'
+  waitOn: ->
+    Meteor.subscribe 'userData'
+  onBeforeAction: ->
+    Session.set 'currentRoute', 'dashboard'
+    @next()
+)
+```
+
+We make a call in our `waitOn` function to subscribe to our `userData` publication on the server. That's it! Now our user's data will be accessible on our `/dashboard` route and we can display their name. Awesome!
+
+We're all done! Now we can kick back and enjoy that we have a custom authentication setup complete with support for third-party services. Yeah, [go ahead and peacock](http://youtu.be/iV6539XsWrc?t=18s), you deserve it.
+
+# Wrap Up & Summary
+
+In this recipe we learned how to create our own authentication setup complete with support for email and password users, as well as user's logging in with third-party accounts. We learned about validating emails for authenticity, configuring third-party networks, and even how to send a welcome email to new users! Lastly, we learned about the importance of publishing only the data we _need_ and creating a UI helper to help us display that data in a template.
+
+
+
+
 - Publishing user data to the template.
 - UI helper.
 
