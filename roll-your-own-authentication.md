@@ -145,7 +145,7 @@ As we're stealing our sign in pattern from [Buffer](http://bufferapp.com), we're
 [...]
 </template>
 ```
-Here, we're calling to another template `signInWithEmailModal` where we've stored the actual contents of our modal. We do this here because we want our modal available in our index template. Wait a sec...when we went over the events earlier we didn't have an event for showing this modal. What gives? 
+Here, we're calling to another template `signInWithEmailModal` where we've stored the actual contents of our modal. We do this here because we want our modal available in our index template. Wait a sec...when we went over the events earlier we didn't have an event for showing this modal. What gives?
 
 <p class="block-header">/client/views/public/index.html</p>
 ```.lang-markup
@@ -223,7 +223,7 @@ submitHandler: ->
 
 First up, we find that we're assigning our dual-button session variable whatchamacalit to a local variable called `createOrSignIn`. Next, after assigning the value of our email and password inputs to an object, we test the value of our `createOrSignIn` variable to see where we should send the user next. If our variable equals `create` (set by our click on the "Create Account" button in our modal), we set the user up with a new account. If the user has clicked "Sign In" instead, we simply log them in. Sweet!
 
-But wait what's this call to a `validateEmailAddress` method? Well, kid, I need to tell you a little story. It's about a little thing called spam and the evil people that use it. You see, evil people like to do things like make fake accounts, sign up for services with dummy emails, and all sorts of other not-so-fun stuff. 
+But wait what's this call to a `validateEmailAddress` method? Well, kid, I need to tell you a little story. It's about a little thing called spam and the evil people that use it. You see, evil people like to do things like make fake accounts, sign up for services with dummy emails, and all sorts of other not-so-fun stuff.
 
 Some of these people have valid reasons, but most of them are just raining on our parade. This method is allowing us to make sure that, without a doubt, our user is signing up with a 110% _legit_ email address. Let's hop over to the server quick to see how it works.
 
@@ -255,7 +255,7 @@ Meteor.methods(
 ```
 What the heck is all of this? Well, because email validation is a pain in the butt and for the sake of time, here we're making use of a third-party email validation service. [Kickbox](http://kickbox.io), which was recommended by the folks at [Mailgun](http://mailgun.com), is an API service that allows you to test email addresses for their existence.
 
-So how exactly are we using it here? First, you'll notice that we're creating a variable called `Future` and doing an `Npm.require` to `('fibers/future')`. This is giving us access to the [Future's](https://www.npmjs.org/package/fibers#futures) portion of the [Fibers NPM package](https://www.npmjs.org/package/fibers) which we'll use to handle the flow of our HTTP method. 
+So how exactly are we using it here? First, you'll notice that we're creating a variable called `Future` and doing an `Npm.require` to `('fibers/future')`. This is giving us access to the [Future's](https://www.npmjs.org/package/fibers#futures) portion of the [Fibers NPM package](https://www.npmjs.org/package/fibers) which we'll use to handle the flow of our HTTP method.
 
 What's unique about this is that if you've ever added an NPM package to your app before, you'l notice that we _didn't_ use a package like `meteorhacks:npm` or create our own local package to import from NPM. What gives?
 
@@ -263,7 +263,7 @@ Because Meteor is itself Node-based and they make use of the futures library in 
 
 So, why do we need this? Our next step (after using `check()` like upstanding citizens) is to make use of the `http` package we installed earlier. Here, we call on the Kickbox API (specifically their `/verify` method), passing our email address and super secret API key. **Note**: you'll need to sign up for Kickbox and generate your own API key to get this working. This step isn't required, but highly recommended for keeping your user list clean.
 
-Futures comes into play because all `HTTP.call` functions are run _[asynchronously](http://stackoverflow.com/a/4560233)_. This means that the code runs and Meteor keeps on truckin' instead of waiting for it to finish. What we're really looking for here is for Meteor to hit this function and _wait_ until it's finished. 
+Futures comes into play because all `HTTP.call` functions are run _[asynchronously](http://stackoverflow.com/a/4560233)_. This means that the code runs and Meteor keeps on truckin' instead of waiting for it to finish. What we're really looking for here is for Meteor to hit this function and _wait_ until it's finished.
 
 We want to wait because the answer we get back from Kickbox will determine whether we allow our user to sign up, or kick em' to the curb. Okay, not that harsh, but it _will_ allow us to notify the user if they're trying to sign up with a bum email.
 
@@ -286,7 +286,7 @@ validateEmail.wait()
 ```
 A few things to pay attention to. The first is actually the last. Where in a normal function we'd just return some value, here, we're returning our Future `validateEmail` with a `.wait()` method invoked on it `validateEmail.wait()`. What this is doing is telling the Future's library to pause the running of the script until it receives a value. When it does, it continues running returning whatever value it was passed.
 
-Up a little bit into our code, we can see that we're making use of our Future's `.return()` method to pass it some data based on the outcome of our `HTTP` request. We test for two instances (three, technicaly): first, if the `HTTP` request throws an error (e.g. a bad URL, no response from the API, etc.) we want to grab that and return it. 
+Up a little bit into our code, we can see that we're making use of our Future's `.return()` method to pass it some data based on the outcome of our `HTTP` request. We test for two instances (three, technicaly): first, if the `HTTP` request throws an error (e.g. a bad URL, no response from the API, etc.) we want to grab that and return it.
 
 Next, if the request does go through and we get a _response_ from the server, we test to see whether the value of the `response.data.result` key is either `invalid` or `unknown`. These keys/values are specific to Kickbox and tell us whether the email we sent this is legitimate. Here, we test for a falsey value _first_ returning an error if the email is bad. If not, we simply return a boolean `true` value.
 
@@ -305,7 +305,7 @@ else
         $('.modal-backdrop').hide()
     )
 ```
-Back on the client and inside of our `Meteor.call 'validateEmailAddress'` function, we watch on the `error	` and `response` arguments. Here, if we get an error (e.g. from the API) we alert it to the user. We do the same if our _response_ was set to an error (i.e. the one we defined, "Sorry, your email..."). Finally, if no errors are present, we assume the email is valid and create the user's account. 
+Back on the client and inside of our `Meteor.call 'validateEmailAddress'` function, we watch on the `error	` and `response` arguments. Here, if we get an error (e.g. from the API) we alert it to the user. We do the same if our _response_ was set to an error (i.e. the one we defined, "Sorry, your email..."). Finally, if no errors are present, we assume the email is valid and create the user's account.
 
 Awesome! With this in place we've actually completed getting user's signed in with email. Next, we need to revisit our third-party sign in's and get them configured so they will actually work.
 
@@ -318,7 +318,7 @@ Because our third-party sign in's are relying on _external_ services outside of 
 
 What this essentially means is that by providing a service with a unique token for our application, we can make requests for information on behalf of the user. So for things like signing in, we can allow the user to use their email/password combination from another service (e.g. Facebook). We never store or touch that email/password, because OAuth implements a permissions system wherein users are prompted to log in to and accept or deny our access to their credentials. Pretty cool, right?
 
-So what we need to accomplish now is the "providing a service with a unique token" part. This is done by making use of the `service-configuration` package we installed earlier. By adding this, we gain access to a set of functions that allow us to update Service Configurations in the database: `ServiceConfiguration.configurations.remove()` and `ServiceConfiguration.configurations.insert()`. 
+So what we need to accomplish now is the "providing a service with a unique token" part. This is done by making use of the `service-configuration` package we installed earlier. By adding this, we gain access to a set of functions that allow us to update Service Configurations in the database: `ServiceConfiguration.configurations.remove()` and `ServiceConfiguration.configurations.insert()`.
 
 Together, these two allow us to set our OAuth `clientId` and `secret` in the database. Calling back to our client code, these values are referenced by Meteor when we call any of the `Meteor.loginWith<Service>` functions. Let's see how we get them setup.
 
@@ -354,9 +354,9 @@ Inside of our function, first [per Meteor's documentation](), we run our `Servic
 
 Next, we present a strange combo: an object labeled `config` and then a `switch/case` statement that references the `config` object. What is this?
 
-By default, OAuth applications are required to provide two keys to developers: `clientId` and a `secret` key. The `clientId` acts as the identifier for your specific application, whereas the `secret` acts like your password (you as the developer, not your user). When we call on an OAuth service, we pass these keys to identify ourselves. 
+By default, OAuth applications are required to provide two keys to developers: `clientId` and a `secret` key. The `clientId` acts as the identifier for your specific application, whereas the `secret` acts like your password (you as the developer, not your user). When we call on an OAuth service, we pass these keys to identify ourselves.
 
-What you'll notice above is that we have three "configurations": `generic`, `facebook`, and `twitter`. If you have a keen eye, you'll notice that the only difference between the three is the `clientId` field. This setup accounts for Facebook and Twitter's variation on the naming of these keys. 
+What you'll notice above is that we have three "configurations": `generic`, `facebook`, and `twitter`. If you have a keen eye, you'll notice that the only difference between the three is the `clientId` field. This setup accounts for Facebook and Twitter's variation on the naming of these keys.
 
 Here, we use our `switch/case` statement to look at the name of the `service` passed as an argument to our function. Depending on what is passed, we then run `ServiceConfiguration.configurations.insert(config.service)` function, passing the "configuration" from above. What this achieves is having the correct key/value pairs and names in place so that when Meteor calls on a given service, what it sends over (again, the `clientId` and `secret`) match the naming conventions _of that service_. Said another way: [you say tomayto, I say tomahto](http://youtu.be/zZ3fjQa5Hls?t=1m30s).
 
@@ -386,11 +386,11 @@ While all of these processes are fairly similar, we should call attention to a f
 #### Configuring Facebook
 When it comes to Facebook, getting our `appId` and `secret` is realtively straightforward, but we need to make sure we get the `App Domain` configured correctly. The `App Domain` is the URL that Facebook expects requests to be coming from in association with the `appId` and `secret` you've specified in your code. If the values set in your application code do not match the values in the dashboard on Facebook, you'll get an error.
 
-To get this working on Facebook, once you've setup your application, head over to the dashboard your your application `https://developers.facebook.com/apps/<App ID>/dashboard/` and click on the "Settings" tab on the left. From here, you'll need to click the "Add Platform"  button (selecting Website), and specify your "Site URL." 
+To get this working on Facebook, once you've setup your application, head over to the dashboard your your application `https://developers.facebook.com/apps/<App ID>/dashboard/` and click on the "Settings" tab on the left. From here, you'll need to click the "Add Platform"  button (selecting Website), and specify your "Site URL."
 
 ![Facebook Application Configuration](http://cl.ly/Ykoq/Image%202014-12-01%20at%209.49.26%20AM.png)
 
-The value of this needs to be the full URL of your application, e.g. `http://localhost:3000`. Once you've set this up, you'll need to go up to the `App Domain` field and specify _just the domain_ of the application, e.g. `localhost`. These two values need to match the exact URL of your environment. For Facebook, you can only specify one Site URL per application, meaning when you want to go into production, you'll need to update the Site URL and App Domain values. 
+The value of this needs to be the full URL of your application, e.g. `http://localhost:3000`. Once you've set this up, you'll need to go up to the `App Domain` field and specify _just the domain_ of the application, e.g. `localhost`. These two values need to match the exact URL of your environment. For Facebook, you can only specify one Site URL per application, meaning when you want to go into production, you'll need to update the Site URL and App Domain values.
 
 Alternatively, you could also setup a _separate_ application for local development and another for production. Just make sure to keep track of your `clientId` and `secret` keys for each of your configurations.
 
@@ -418,11 +418,11 @@ http://localhost:3000/_oauth/google?close
 http://yourproductionsite.meteor.com/_oauth/google?close
 ```
 
-Once those are set, click "Create Client ID" and you should get your `clientId` and `secret`! Wonderful. 
+Once those are set, click "Create Client ID" and you should get your `clientId` and `secret`! Wonderful.
 
 #### Configuring Twitter
 
-So, Twitter. We'll give them a hard time but they're actually quite pleasant to set up. Fortunately, their OAuth application registration is quick and painless, we just want to call attention to two things. Both pertain to how we setup our Callback URL. First, if you're looking to test your application on `localhost`, Twitter won't let you! Ha! Where the other services would let us set our Callback URL as `http://localhost:3000`, Twitter is a straight up thug and says "_no_." 
+So, Twitter. We'll give them a hard time but they're actually quite pleasant to set up. Fortunately, their OAuth application registration is quick and painless, we just want to call attention to two things. Both pertain to how we setup our Callback URL. First, if you're looking to test your application on `localhost`, Twitter won't let you! Ha! Where the other services would let us set our Callback URL as `http://localhost:3000`, Twitter is a straight up thug and says "_no_."
 
 Instead when we're working on `localhost` we need to use the less familiar but equivalent `http://127.0.0.1:3000`. If this is gibberish to you, `127.0.0.1` is the default local IP address of your computer, which is the same as `http://localhost:3000`. `localhost` is merely a convenient shorthand (like a domain name on a website). Great, so we can do this, but we're not done just yet!
 
@@ -436,10 +436,114 @@ Remember that wack-a-doodle string Google needed at the end of our Callback URL?
 </div>
 
 ### Sending Welcome Email
+The second to last thing we need to do is welcome our new user to our service! This is optional,
+but it's a good opportunity to "onboard" the user and confirm their account creation. In order to send off our email, we're going to make use of a handy function given to us by Meteor `Accounts.onCreateUser()`. Just like it sounds, when a _new_ user is created by Meteor, this function is called. Let's hop over to the server where this is running in our code:
+
+<p class="block-header">/server/admin/account-creation.coffee</p>
+```.lang-coffeescript
+Accounts.onCreateUser((options,user)->
+  userData =
+    email: determineEmail(user)
+    name: if options.profile then options.profile.name else ""
+
+  if userData.email != null
+    Meteor.call 'sendWelcomeEmail', userData, (error)->
+      console.log error if error
+
+  if options.profile
+    user.profile = options.profile
+
+  user
+)
+```
+
+We have a few things going on in here. First, you'll notice that this function gives us two arguments to make use of: `options` and `user`. `options` are parameters set in a call to `Accounts.createUser`, or, a call to a third-party login service (e.g. username/email, password, profile, etc.). `user` is the proposed user document that Meteor will insert into the database. Pay attention to that. This function is technically being fired _before_ Meteor inserts the new user. What does this mean?
+
+> The function should return the user document (either the one passed in or a newly-created object) with whatever modifications are desired. The returned document is inserted directly into the Meteor.users collection.
+— via [Meteor Documentation](http://docs.meteor.com/#/full/accounts_oncreateuser)
+
+This means that Meteor looks at the return value of this function for what to insert as the user in the database. We _absolutely must_ return the user document at the end of our `onCreateUser()` function. Also explained [in the docs](http://docs.meteor.com/#/full/accounts_oncreateuser) is that this function overrides the default hook Meteor would use to perform this process, meaning, we have to account for any default behavior in our own function (e.g. adding the user's profile to their user object).
+
+```.lang-coffeescript
+if options.profile
+  user.profile = options.profile
+```
+
+You can see in our code above that we _do_ want to preserve the user's profile information, so we make sure to test for it and set it on the `user` document if it exists. Great!
+
+Let's jump back up to the top of our `Accounts.onCreateUser()` function. We're creating an object called `userData` and setting two keys `email` and `name` to some funky values. What's going on here?
+
+First, in our email key, we're calling a function we've defined called `determineEmail()` and passing our the `user` argument given to us by Meteor.
+
+```.lang-coffeescript
+determineEmail = (user)->
+  if user.emails
+    emailAddress = user.emails[0].address
+  else if user.services
+    services = user.services
+    emailAddress = switch
+      when services.facebook then services.facebook.email
+      when services.github then services.github.email
+      when services.google then services.google.email
+      when services.twitter then null
+      else null
+  else
+    null
+```
+
+This function is designed to help us account for the fact that Meteor does _not_ store user email's the same for each of its different authentication methods. Instead, it uses two conventions: when a user is created via `accounts-password`, the user's email is set in the `user.emails` array in the database. When using a third-party OAuth service, Meteor is storing the user's email in a `services` object and a nested `service-name` (e.g. `facebook`) oject. Woah!
+
+To compensate for this, our `determineEmail()` function looks to see what method of storage is being used for the user's email and then returns the value that it finds. The part to pay attention to is the `case/switch` function being used to check third-party services. This is saying if the `services` object exists on the user, check for each of our known services and when you get a match, return the `email` field for that service.
+
+You'll notice that our dear friend Twitter is returning `null` instead of an email. Well, sorry to be the bearer of bad news, but [Twitter's OAuth API does _not_ offer an email address](https://twittercommunity.com/t/how-to-get-email-from-twitter-user-using-oauthtokens/558). This isn't just for Meteor, this is for _anyone_ using their OAuth API. Not cool, Twitter. [Not cool](http://media.giphy.com/media/NZrgV9nFbWYRW/giphy.gif). By returning `null` we can later test for an email value to protect ourselves from attempting to send to an email that doesn't exist. We can see this test in action back in our `Accounts.onCreateUser()` function:
+
+```
+if userData.email != null
+  Meteor.call 'sendWelcomeEmail', userData, (error)->
+    console.log error if error
+```
+
+Recall that `userData.email` is the result of our `determineEmail()` function. If the value isn't null, we call to a Meteor method `sendWelcomeEmail` to do our bidding! Nice.
+
+Now, the last step of this is to actually _send an email_. How do we do it?
+
+```.lang-coffeescript
+Meteor.methods(
+
+  sendWelcomeEmail: (userData)->
+    check(userData,{email: String, name: String})
+
+    SSR.compileTemplate('welcomeEmail', Assets.getText('email/welcome-email.html'))
+
+    emailTemplate = SSR.render('welcomeEmail',
+      email: userData.email
+      name: if userData.name != "" then userData.name else null
+      url: "http://localhost:3000"
+    )
+
+    Email.send(
+      to: userData.email
+      from: "The Meteor Chef - Demo <demo@themeteorchef.com>"
+      subject: "Welcome aboard, team matey!"
+      html: emailTemplate
+    )
+
+)
+```
+
+Because we'd like to send a spiffy HTML email to our new user _and_ we'd like to personalize it,
+we need a way to render our email template on the server. Enter the `meteorhacks:ssr` package. Just like it sounds, this package gives us the ability to do exactly what we want. In order to do it, it gives us two functions to work with: `SSR.compileTemplate()` and `SSR.render()`.
+
+The first, `compileTemplate()` is where we define the name of our template `'welcomeEmail'` and pass a call to `Assets.getText()` with the path of our email template. What's this about? [Recall from Recipe #1](http://themeteorchef.com/recipes/exporting-data-from-your-meteor-application) that this function simply pulls in the _text_ of a file we specify. The _path_ it looks at is relative to the `/private` directory in our project root. So here, we're importing our email from `/private/email/welcome-email.html`.
+
+Once we have our template defined and available as `'welcomeEmail'` for `ssr` to use, we call the `render()` method, again passing the name of our template `'welcomeEmail'` along with the values we'd like to make available as template variables (e.g. `{{email}}`) in our email. Here we pass three value: `email`, `name`, and `url`. The first two, `email` and `name`, are an
+
+
 - Configuring email service.
 - Getting correct email address on signup.
 - SSR
 - Quick mention of email template.
+
 ### Displaying User Email on Template
 - Publishing user data to the template.
 - UI helper.
