@@ -54,7 +54,6 @@ Meteor.methods(
     # Compile and render our email template using meteorhacks:ssr.
     SSR.compileTemplate('welcomeEmail', Assets.getText('email/welcome-email.html'))
     emailTemplate = SSR.render('welcomeEmail',
-      email: userData.email
       name: if userData.name != "" then userData.name else null
       url: "http://localhost:3000"
     )
