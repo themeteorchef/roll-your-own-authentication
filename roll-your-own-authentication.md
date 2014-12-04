@@ -141,8 +141,8 @@ As we're stealing our sign in pattern from [Buffer](http://bufferapp.com), we're
 <p class="block-header">/client/views/public/index.html</p>
 ```.lang-markup
 <template name="index">
-{{>signInWithEmailModal}}
-[...]
+  {{>signInWithEmailModal}}
+  [...]
 </template>
 ```
 Here, we're calling to another template `signInWithEmailModal` where we've stored the actual contents of our modal. We do this here because we want our modal available in our index template. Wait a sec...when we went over the events earlier we didn't have an event for showing this modal. What gives?
@@ -234,7 +234,9 @@ Future = Npm.require('fibers/future');
 Meteor.methods(
   validateEmailAddress: (address)->
     check(address,String)
+
     validateEmail = new Future()
+
     HTTP.call("GET", "https://api.kickbox.io/v1/verify",
       params:
         email: address
@@ -250,6 +252,7 @@ Meteor.methods(
         else
           validateEmail.return(true)
     )
+
     validateEmail.wait()
 )
 ```
@@ -270,7 +273,7 @@ We want to wait because the answer we get back from Kickbox will determine wheth
 <p class="block-header">/server/email/validation.coffee</p>
 ```.lang-coffeescript
 validateEmail = new Future()
-[...]
+  [...]
 ,(error,response)->
   if error
     validateEmail.return(error)
@@ -282,8 +285,10 @@ validateEmail = new Future()
     else
       validateEmail.return(true)
 )
+
 validateEmail.wait()
 ```
+
 A few things to pay attention to. The first is actually the last. Where in a normal function we'd just return some value, here, we're returning our Future `validateEmail` with a `.wait()` method invoked on it `validateEmail.wait()`. What this is doing is telling the Future's library to pause the running of the script until it receives a value. When it does, it continues running returning whatever value it was passed.
 
 Up a little bit into our code, we can see that we're making use of our Future's `.return()` method to pass it some data based on the outcome of our `HTTP` request. We test for two instances (three, technicaly): first, if the `HTTP` request throws an error (e.g. a bad URL, no response from the API, etc.) we want to grab that and return it.
@@ -322,6 +327,7 @@ So what we need to accomplish now is the "providing a service with a unique toke
 
 Together, these two allow us to set our OAuth `clientId` and `secret` in the database. Calling back to our client code, these values are referenced by Meteor when we call any of the `Meteor.loginWith<Service>` functions. Let's see how we get them setup.
 
+<p class="block-header">/server/admin/startup.coffee</p>
 ```.lang-coffeescript
 createServiceConfiguration = (service,clientId,secret)->
   ServiceConfiguration.configurations.remove(
@@ -362,11 +368,12 @@ Here, we use our `switch/case` statement to look at the name of the `service` pa
 
 Okay, so we've got this all setup, but where and how do we call it? Just beneath our function declaration you'll find four calls to our `createServiceConfiguration()` function:
 
+<p class="block-header">/server/admin/startup.coffee</p>
 ```.lang-coffeescript
-  createServiceConfiguration('facebook', 'Insert your appId here.', 'Insert your secret here.')
-  createServiceConfiguration('github', 'Insert your clientId here.', 'Insert your secret here.')
-  createServiceConfiguration('google', 'Insert your clientId here.', 'Insert your secret here.')
-  createServiceConfiguration('twitter', 'Insert your consumerKey here.', 'Insert your secret here.')
+createServiceConfiguration('facebook', 'Insert your appId here.', 'Insert your secret here.')
+createServiceConfiguration('github', 'Insert your clientId here.', 'Insert your secret here.')
+createServiceConfiguration('google', 'Insert your clientId here.', 'Insert your secret here.')
+createServiceConfiguration('twitter', 'Insert your consumerKey here.', 'Insert your secret here.')
 ```
 Just like we setup our function to expect, we pass three arguments: `service`, `clientId`, and `secret`. Isn't this nice? Instead of having the same code copied over and over, we get a nice one-liner for configuring each service. But...where do we get these `clientId` and `secret` keys? Good question!
 
@@ -476,6 +483,7 @@ Let's jump back up to the top of our `Accounts.onCreateUser()` function. We're c
 
 First, in our email key, we're calling a function we've defined called `determineEmail()` and passing our `user` argument given to us by Meteor.
 
+<p class="block-header">/server/admin/account-creation.coffee</p>
 ```.lang-coffeescript
 determineEmail = (user)->
   if user.emails
@@ -498,7 +506,8 @@ To compensate for this, our `determineEmail()` function looks to see what method
 
 You'll notice that our dear friend Twitter is returning `null` instead of an email. Well, sorry to be the bearer of bad news, but [Twitter's OAuth API does _not_ offer an email address](https://twittercommunity.com/t/how-to-get-email-from-twitter-user-using-oauthtokens/558). This isn't just for Meteor, this is for _anyone_ using their OAuth API. Not cool, Twitter. [Not cool](http://media.giphy.com/media/NZrgV9nFbWYRW/giphy.gif). By returning `null` we can later test for an email value to protect ourselves from attempting to send to an email that doesn't exist. We can see this test in action back in our `Accounts.onCreateUser()` function:
 
-```
+<p class="block-header">/server/admin/account-creation.coffee</p>
+```.lang-coffeescript
 if userData.email != null
   Meteor.call 'sendWelcomeEmail', userData, (error)->
     console.log error if error
@@ -508,6 +517,7 @@ Recall that `userData.email` is the result of our `determineEmail()` function. I
 
 Now, the last step of this is to actually _send an email_. How do we do it?
 
+<p class="block-header">/server/admin/account-creation.coffee</p>
 ```.lang-coffeescript
 Meteor.methods(
 
@@ -539,6 +549,7 @@ The first, `compileTemplate()` is where we define the name of our template `'wel
 
 Once we have our template defined and available as `'welcomeEmail'` for `ssr` to use, we call the `render()` method, again passing the name of our template `'welcomeEmail'` along with the values we'd like to make available as template variables (e.g. `{{name}}`) in our email. Here we pass two values: `name` and `url`. The first, `name`, is our attempt to personalize the user's email. If we open up our email template, we can see how this is used:
 
+<p class="block-header">/private/email/welcome-email.html</p>
 ```.lang-markup
 {{#if name}}
   Hey there, {{name}}! Welcome aboard!
@@ -549,6 +560,7 @@ Once we have our template defined and available as `'welcomeEmail'` for `ssr` to
 
 Simple, but a nice touch. Because we're using good ol' fashioned Handlebars templates, we can make use of the handy `{{if}}` statement to check if `name` is set. So cool! Further down in the email, we can also find our use of the `url` key set above:
 
+<p class="block-header">/private/email/welcome-email.html</p>
 ```.lang-markup
 <a href="{{url}}" class="btn-primary" style="[...]">Check Out DCS</a>
 ```
@@ -568,6 +580,7 @@ Good, good, good. We're onto our last step which is something simple but importa
 
 To accomplish this, we need to reprise a bit of our code from earlier, the `determineEmail()` function. This time, however, we're going to wrap it in a UI helper so we can make use of it in our template. Let's take a look:
 
+<p class="block-header">/client/helpers/helpers-ui.coffee</p>
 ```.lang-coffeescript
 UI.registerHelper('userIdentity', (userId) ->
   getUser = Meteor.users.findOne({_id: userId})
@@ -591,6 +604,7 @@ Almost identical to what we did earlier (so much so that you can score easy refa
 
 To make use of the helper over in our template code, we can now call `{{userIdentity}}` passing the current user's ID as a parameter:
 
+<p class="block-header">/client/includes/_header.html</p>
 ```.lang-markup
 {{#if userIdentity currentUser._id}}
   <li class="dropdown">
@@ -610,6 +624,7 @@ We're all don...no we're not!
 
 This is _super_ important. Because we're interacting with our user's data, we need to be careful about what data is getting to the client. To control this, we've setup a publication on the server to specify _exactly_ what we need, along with a subscription in our `/dashboard` view.
 
+<p class="block-header">/server/publications.coffee</p>
 ```.lang-coffeescript
 Meteor.publish('userData', ->
   currentUser = this.userId
@@ -635,6 +650,7 @@ Next, we test for the existence of that value and if it's available, we publish 
 
 Phew. Alright, so we're safe there. The _very last thing_ we need to do is ensure that we can actually _see_ the data we're publishing. In our `/dashboard` route definition:
 
+<p class="block-header">/client/routes/routes-authenticated.coffee</p>
 ```.lang-coffeescript
 Router.route('dashboard',
   path: '/dashboard'
@@ -651,23 +667,6 @@ We make a call in our `waitOn` function to subscribe to our `userData` publicati
 
 We're all done! Now we can kick back and enjoy that we have a custom authentication setup complete with support for third-party services. Yeah, [go ahead and peacock](http://youtu.be/iV6539XsWrc?t=18s), you deserve it.
 
-# Wrap Up & Summary
+### Wrap Up & Summary
 
 In this recipe we learned how to create our own authentication setup complete with support for email and password users, as well as user's logging in with third-party accounts. We learned about validating emails for authenticity, configuring third-party networks, and even how to send a welcome email to new users! Lastly, we learned about the importance of publishing only the data we _need_ and creating a UI helper to help us display that data in a template.
-
-
-
-
-- Publishing user data to the template.
-- UI helper.
-
-- Accounts Base
-- Accounts Password
-- Accounts Facebook
-- Accounts GitHub
-- Accounts Google
-- Accounts Twitter
-- Service Configuration
-- At some point, make a note about security. We won't touch on it in here, but considerations will need to be made re: creating accounts using social login.
-- Stupid: When logged in, add a title "Annnd here's what you've been waiting for fellas."
-# Logout
