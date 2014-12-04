@@ -5,7 +5,7 @@ Because this recipe calls for a lot of DIY work involving the Meteor authenticat
 ```.lang-bash
 meteor add accounts-password
 ```
-The `accounts-password` package is the generic Meteor accounts service. This will allow us to give user's the option of signing up for Don Carlton Sales using an email address and password.
+The `accounts-password` package is the generic Meteor accounts service. This will allow us to give user's the option of signing in for Don Carlton Sales using an email address and password.
 
 <p class="block-header">Terminal</p>
 ```.lang-bash
@@ -87,11 +87,11 @@ To get us started, we need to make sure Don's team can easily login to the Don C
   </div>
 </template>
 ```
-This is all pretty straightforward. The part we want to pay attention to most is the `<ul class="btn-list"></ul>` element. Here, we give each of our services their own button, rounding out the list with a button to sign in with an email. Next, we'll look at the controller we're using to make each of these buttons actuall _do something_. Ignore the `{{>signInWithEmailModal}}` inclusion, we'll tackle that in a bit.
+This is all pretty straightforward. The part we want to pay attention to most is the `<ul class="btn-list"></ul>` element. Here, we give each of our services their own button, rounding out the list with a button to sign in with an email. Next, we'll look at the controller we're using to make each of these buttons actually _do something_. Ignore the `{{>signInWithEmailModal}}` inclusion, we'll tackle that in a bit.
 
 <div class="note">
   <h3>A quick note</h3>
-  <p>In this recipe, we're only focusing on the more popular OAuth implementation that Meteor offers. Along with Facebook, GitHub, Google, and Twitter, Meteor also offers access to OAuth login for Meetup, Weibo, and the recently release <a href="https://www.meteor.com/account-settings">Meteor Developer Account</a> service. Like we'll discover with Twitter, Weibo and Meteor Developer accounts also do not offer the ability to request specific permissions for users.</p>  
+  <p>In this recipe, we're only focusing on the more popular OAuth implementation that Meteor offers. Along with Facebook, GitHub, Google, and Twitter, Meteor also offers access to OAuth login for Meetup, Weibo, and the recently released <a href="https://www.meteor.com/account-settings">Meteor Developer Account</a> service. Like we'll discover with Twitter, Weibo and Meteor Developer accounts also do not offer the ability to request specific permissions for users.</p>  
 </div>
 
 
@@ -265,7 +265,7 @@ So, why do we need this? Our next step (after using `check()` like upstanding ci
 
 Futures comes into play because all `HTTP.call` functions are run _[asynchronously](http://stackoverflow.com/a/4560233)_. This means that the code runs and Meteor keeps on truckin' instead of waiting for it to finish. What we're really looking for here is for Meteor to hit this function and _wait_ until it's finished.
 
-We want to wait because the answer we get back from Kickbox will determine whether we allow our user to sign up, or kick em' to the curb. Okay, not that harsh, but it _will_ allow us to notify the user if they're trying to sign up with a bum email.
+We want to wait because the answer we get back from Kickbox will determine whether we allow our user to sign in, or kick em' to the curb. Okay, maybe not that harsh, but it _will_ allow us to notify the user if they're trying to sign up with a bum email.
 
 <p class="block-header">/server/email/validation.coffee</p>
 ```.lang-coffeescript
@@ -288,7 +288,7 @@ A few things to pay attention to. The first is actually the last. Where in a nor
 
 Up a little bit into our code, we can see that we're making use of our Future's `.return()` method to pass it some data based on the outcome of our `HTTP` request. We test for two instances (three, technicaly): first, if the `HTTP` request throws an error (e.g. a bad URL, no response from the API, etc.) we want to grab that and return it.
 
-Next, if the request does go through and we get a _response_ from the server, we test to see whether the value of the `response.data.result` key is either `invalid` or `unknown`. These keys/values are specific to Kickbox and tell us whether the email we sent this is legitimate. Here, we test for a falsey value _first_ returning an error if the email is bad. If not, we simply return a boolean `true` value.
+Next, if the request does go through and we get a _response_ from the server, we test to see whether the value of the `response.data.result` key is either `invalid` or `unknown`. These keys/values are specific to Kickbox and tell us whether the email we sent them is legitimate. Here, we test for a falsey value _first_ returning an error if the email is bad. If not, we simply return a boolean `true` value.
 
 <p class="block-header">/client/controllers/public/sign-in-with-email-modal.coffee</p>
 ```.lang-coffeescript
@@ -310,7 +310,7 @@ Back on the client and inside of our `Meteor.call 'validateEmailAddress'` functi
 Awesome! With this in place we've actually completed getting user's signed in with email. Next, we need to revisit our third-party sign in's and get them configured so they will actually work.
 
 ### Configuring Third-Party Services
-Because our third-party sign in's are relying on _external_ services outside of our control, we need a way to identify our application with those services so they know their user's are safe. Fortunately for us, some smarter folks in the past came up with a convenient system known as OAuth, or, "open authentication":
+Because our third-party sign in's are relying on _external_ services outside of our control, we need a way to identify our application with those services so they know their users are safe. Fortunately for us, some smarter folks in the past came up with a convenient system known as OAuth, or, "open authentication":
 
 > OAuth is an open standard to authorization. OAuth provides client applications a 'secure delegated access' to server resources on behalf of a resource owner. It specifies a process for resource owners to authorize third-party access to their server resources without sharing their credentials.
 
@@ -350,7 +350,7 @@ createServiceConfiguration = (service,clientId,secret)->
 
 To keep our code DRY, we've setup a function `createServiceConfiguration()` that will wrap the two `ServiceConfiguration` functions (via Meteor) above. We're doing this because for each service we want to support, we'd need to run both of these functions. Putting them into a single function and simply passing over the parameters they need access to saves us a few lines of code. Nice!
 
-Inside of our function, first [per Meteor's documentation](), we run our `ServiceConfiguration.configurations.remove()` function to "reset" any existing configurations in our app. Because this will all run on startup, we want to ensure that we're clearing out any _old_ configurations. This is nice for when you're running a production application and reset your API keys. Having this ensures that when you update those keys in your code, they actually "stick."
+Inside of our function, first [per Meteor's documentation](http://docs.meteor.com/#/full/meteor_loginwithexternalservice), we run our `ServiceConfiguration.configurations.remove()` function to "reset" any existing configurations in our app. Because this will all run on startup, we want to ensure that we're clearing out any _old_ configurations. This is nice for when you're running a production application and reset your API keys. Having this ensures that when you update those keys in your code, they actually "stick."
 
 Next, we present a strange combo: an object labeled `config` and then a `switch/case` statement that references the `config` object. What is this?
 
@@ -384,7 +384,7 @@ At each site you'll need to do two things:
 While all of these processes are fairly similar, we should call attention to a few things that can be confusing. Let's take a look at some of the pitfalls we might run into while getting this all set up.
 
 #### Configuring Facebook
-When it comes to Facebook, getting our `appId` and `secret` is realtively straightforward, but we need to make sure we get the `App Domain` configured correctly. The `App Domain` is the URL that Facebook expects requests to be coming from in association with the `appId` and `secret` you've specified in your code. If the values set in your application code do not match the values in the dashboard on Facebook, you'll get an error.
+When it comes to Facebook, getting our `appId` and `secret` is realtively straightforward, but we need to make sure we get the `App Domain` configured correctly. The `App Domain` is the URL that Facebook expects requests to be coming from in association with the `appId` and `secret` you've specified in your code. If the values set in your application code are sent from a domain that does not match the values in the dashboard on Facebook, you'll get an error.
 
 To get this working on Facebook, once you've setup your application, head over to the dashboard your your application `https://developers.facebook.com/apps/<App ID>/dashboard/` and click on the "Settings" tab on the left. From here, you'll need to click the "Add Platform"  button (selecting Website), and specify your "Site URL."
 
@@ -424,7 +424,7 @@ Once those are set, click "Create Client ID" and you should get your `clientId` 
 
 So, Twitter. We'll give them a hard time but they're actually quite pleasant to set up. Fortunately, their OAuth application registration is quick and painless, we just want to call attention to two things. Both pertain to how we setup our Callback URL. First, if you're looking to test your application on `localhost`, Twitter won't let you! Ha! Where the other services would let us set our Callback URL as `http://localhost:3000`, Twitter is a straight up thug and says "_no_."
 
-Instead when we're working on `localhost` we need to use the less familiar but equivalent `http://127.0.0.1:3000`. If this is gibberish to you, `127.0.0.1` is the default local IP address of your computer, which is the same as `http://localhost:3000`. `localhost` is merely a convenient shorthand (like a domain name on a website). Great, so we can do this, but we're not done just yet!
+Instead when we're working on `localhost` we need to use the less familiar but equivalent `http://127.0.0.1:3000`. If this is gibberish to you, `127.0.0.1` is the default local IP address of your computer, which is the same as `http://localhost:3000`. `localhost` is merely a convenient shorthand (like a domain name on a website). Great, so this is set but we're not done just yet!
 
 ![Twitter Application Management](http://cl.ly/YmBp/Image%202014-12-02%20at%209.27.40%20AM.png)
 
@@ -460,6 +460,7 @@ Accounts.onCreateUser((options,user)->
 We have a few things going on in here. First, you'll notice that this function gives us two arguments to make use of: `options` and `user`. `options` are parameters set in a call to `Accounts.createUser`, or, a call to a third-party login service (e.g. username/email, password, profile, etc.). `user` is the proposed user document that Meteor will insert into the database. Pay attention to that. This function is technically being fired _before_ Meteor inserts the new user. What does this mean?
 
 > The function should return the user document (either the one passed in or a newly-created object) with whatever modifications are desired. The returned document is inserted directly into the Meteor.users collection.
+
 — via [Meteor Documentation](http://docs.meteor.com/#/full/accounts_oncreateuser)
 
 This means that Meteor looks at the return value of this function for what to insert as the user in the database. We _absolutely must_ return the user document at the end of our `onCreateUser()` function. Also explained [in the docs](http://docs.meteor.com/#/full/accounts_oncreateuser) is that this function overrides the default hook Meteor would use to perform this process, meaning, we have to account for any default behavior in our own function (e.g. adding the user's profile to their user object).
@@ -473,7 +474,7 @@ You can see in our code above that we _do_ want to preserve the user's profile i
 
 Let's jump back up to the top of our `Accounts.onCreateUser()` function. We're creating an object called `userData` and setting two keys `email` and `name` to some funky values. What's going on here?
 
-First, in our email key, we're calling a function we've defined called `determineEmail()` and passing our the `user` argument given to us by Meteor.
+First, in our email key, we're calling a function we've defined called `determineEmail()` and passing our `user` argument given to us by Meteor.
 
 ```.lang-coffeescript
 determineEmail = (user)->
@@ -491,7 +492,7 @@ determineEmail = (user)->
     null
 ```
 
-This function is designed to help us account for the fact that Meteor does _not_ store user email's the same for each of its different authentication methods. Instead, it uses two conventions: when a user is created via `accounts-password`, the user's email is set in the `user.emails` array in the database. When using a third-party OAuth service, Meteor is storing the user's email in a `services` object and a nested `service-name` (e.g. `facebook`) oject. Woah!
+This function is designed to help us account for the fact that Meteor does _not_ store user email's the same for each of its different authentication methods. Instead, it uses two conventions: when a user is created via `accounts-password`, the user's email is set in the `user.emails` array in the database. When using a third-party OAuth service, Meteor is storing the user's email in a `services` object and a nested `service-name` (e.g. `facebook`) object. Woah!
 
 To compensate for this, our `determineEmail()` function looks to see what method of storage is being used for the user's email and then returns the value that it finds. The part to pay attention to is the `case/switch` function being used to check third-party services. This is saying if the `services` object exists on the user, check for each of our known services and when you get a match, return the `email` field for that service.
 
@@ -561,12 +562,7 @@ The last part of our code is focused on sending our email via the `Email.send()`
 <p>We're going to skip over configuring our email address in Meteor to save time. Recall that in order to do this you need to make use of the MAIL_URL environment variable in your server code. You can learn more about environment variables <a href="http://www.meteorpedia.com/read/Environment_Variables">here</a>. Also, check out <a href="http://themeteorchef.com/recipes/adding-a-beta-invitation-system-to-your-meteor-application">Recipe #2</a> where we go into detail on setting this up.</p>
 </div>
 
-- Configuring email service.
-- Getting correct email address on signup.
-- SSR
-- Quick mention of email template.
-
-### Displaying User Email on Template
+### Displaying Our User's Email on Template
 
 Good, good, good. We're onto our last step which is something simple but important: displaying the user's email on the template. Once our user's are logged in, we want to be able to get display their email in our dropdown menu where they can "logout."
 
@@ -591,7 +587,7 @@ UI.registerHelper('userIdentity', (userId) ->
 )
 ```
 
-Almost identical to what we did earlier (so much so that you can score easy refactor points in your own app by making this a global function). There are two big difference here: first, we don't have access to the user document like we did earlier, so we need to take a passed `userId` argument and look up the user in the database. Our other difference is for Twitter. Recall that they _do not_ give us an email to work with, so, instead we opt for the user's `screenName` or `@name` (e.g. `@themeteorchef`).
+Almost identical to what we did earlier (so much so that you can score easy refactor points in your own app by making this a global function). There are two big differences here: first, we don't have access to the user document like we did earlier, so we need to take a passed `userId` argument and look up the user in the database. Our other difference is for Twitter. Recall that they _do not_ give us an email to work with, so, instead we opt for the user's `screenName` or `@name` (e.g. `@themeteorchef`).
 
 To make use of the helper over in our template code, we can now call `{{userIdentity}}` passing the current user's ID as a parameter:
 
@@ -633,7 +629,9 @@ Meteor.publish('userData', ->
   )
 ```
 
-We've kept things a bit verbose here so we can see what's happening. First, we set a variable `currentUser` equal to `this.userId` which is a convenient value set for us by Meteor so we don't have to pass our user's ID to our publication. Next, we test for the existence of that value and if it's available, we publish the data for our _current_ user and specifically request the fields that we want. Notice that because we only need access to their profile and email address, we're only request those fields. This is important because if we _didn't_ do this, we'd be sending the user's **entire document to the client**. This is a big no no.
+We've kept things a bit verbose here so we can see what's happening. First, we set a variable `currentUser` equal to `this.userId` which is a convenient value set for us by Meteor so we don't have to pass our user's ID to our publication.
+
+Next, we test for the existence of that value and if it's available, we publish the data for our _current_ user and specifically request the fields that we want. Notice that because we only need access to their profile and email address, we're only requesting those fields. This is important because if we _didn't_ do this, we'd be sending the user's **entire document to the client**. This is a big no no.
 
 Phew. Alright, so we're safe there. The _very last thing_ we need to do is ensure that we can actually _see_ the data we're publishing. In our `/dashboard` route definition:
 
