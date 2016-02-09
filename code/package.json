@@ -1,0 +1,10 @@
+{
+  "name": "application-name",
+  "version": "1.0.0",
+  "description": "Application description.",
+  "scripts": {
+    "start": "meteor --settings settings-development.json",
+    "staging": "meteor deploy staging.meteor.com --settings settings-development.json",
+    "production": "meteor deploy production.meteor.com --settings settings-production.json"
+  }
+}

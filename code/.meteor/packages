@@ -3,24 +3,40 @@
 # 'meteor add' and 'meteor remove' will edit this file for you,
 # but you can also edit it by hand.
 
-standard-app-packages
-coffeescript
-underscore
 accounts-password
 accounts-base
-jquery
-check
-audit-argument-checks
-iron:router
-pinglamb:bootstrap3
-themeteorchef:jquery-validation
-particle4dev:sass@0.3.0
 accounts-facebook
 accounts-github
 accounts-google
 accounts-twitter
-meteorhacks:ssr
-service-configuration
-http
-email
+jquery
+check
+audit-argument-checks
+themeteorchef:jquery-validation
+twbs:bootstrap
+browser-policy
+meteorhacks:npm
 
+
+themeteorchef:bert
+meteorhacks:ssr
+standard-minifiers
+
+
+npm-container
+ecmascript
+digilord:faker
+kadira:flow-router
+kadira:blaze-layout
+meteorhacks:fast-render
+meteor-base
+session
+templating
+fourseven:scss
+stevezhu:lodash
+reactive-var
+reactive-dict
+aldeed:collection2
+tracker
+service-configuration
+email

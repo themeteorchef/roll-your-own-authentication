@@ -1,0 +1,28 @@
+<template name="signInWithEmailModal">
+  <div class="modal fade" id="sign-in-with-email-modal" tabindex="-1" role="dialog" aria-labelledby="sign-in-with-email-modal" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <h4 class="modal-title" id="sign-in">Sign In to DCS With Email</h4>
+        </div>
+        <form id="sign-in-with-email">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="emailAddress">Email Address</label>
+              <input type="email" name="emailAddress" class="form-control" placeholder="What's your email, friend?">
+            </div>
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input type="password" name="password" class="form-control" placeholder="How about a password, pal?">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button data-auth-type="create" type="submit" class="btn btn-primary">Create Account</button>
+            <button data-auth-type="sign-in" type="submit" class="btn btn-default">Sign In</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
