@@ -1,21 +1,15 @@
 Template.index.events({
   'click [data-social-login]' ( event, template ) {
-    const service   = event.target.getAttribute( 'data-social-login' ),
-          platforms = {
-            facebook: 'loginWithFacebook',
-            github: 'loginWithGithub',
-            google: 'loginWithGoogle',
-            twitter: 'loginWithTwitter'
-          },
+    const service = event.target.getAttribute( 'data-social-login' ),
           options = {
             requestPermissions: [ 'email' ]
           };
 
-    if ( service === 'twitter' ) {
+    if ( service === 'loginWithTwitter' ) {
       delete options.requestPermissions;
     }
 
-    Meteor[ platforms[ service ] ]( options, ( error ) => {
+    Meteor[ service ]( options, ( error ) => {
       if ( error ) {
         Bert.alert( error.message, 'danger' );
       }

@@ -3,20 +3,12 @@ const getUserIdentity = ( user ) => {
       services = user.services;
 
   if ( emails ) {
-    return _getEmail( emails );
+    return emails[ 0 ].address;
   } else if ( services ) {
     return _getEmailFromService( services );
   } else {
-    if ( Meteor.isClient ) {
-      return _getNameFromProfile( user );
-    } else {
-      return null;
-    }
+    return user.profile.name;
   }
-};
-
-const _getEmail = ( emails ) => {
-  return emails[ 0 ].address;
 };
 
 const _getEmailFromService = ( services ) => {
@@ -24,10 +16,6 @@ const _getEmailFromService = ( services ) => {
     let current = services[ service ];
     return service === 'twitter' ? current.screenName : current.email;
   }
-};
-
-const _getNameFromProfile = ( user ) => {
-  return user.profile.name;
 };
 
 Modules.both.getUserIdentity = getUserIdentity;

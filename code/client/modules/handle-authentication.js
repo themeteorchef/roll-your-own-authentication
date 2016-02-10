@@ -39,13 +39,13 @@ let _handleAuth = () => {
       password = template.find( '[name="password"]' ).value;
 
   if ( type === 'create' ) {
-    _createUser( email, password, _loginUser );
+    _createUser( email, password, 'Welcome aboard, matey!' );
   } else {
     _loginUser( email, password, 'Welcome back, matey!' );
   }
 };
 
-let _createUser = ( email, password, login ) => {
+let _createUser = ( email, password, message ) => {
   Accounts.createUser({
     email: email,
     password: password
@@ -53,7 +53,8 @@ let _createUser = ( email, password, login ) => {
     if ( error ) {
       Bert.alert( error.reason, 'danger' );
     } else {
-      login( email, password, 'Welcome aboard, matey!' );
+      Bert.alert( message, 'success' );
+      _hideModal();
     }
   });
 };
@@ -70,7 +71,7 @@ let _loginUser = ( email, password, message ) => {
   });
 };
 
-const _hideModal = () => {
+let _hideModal = () => {
   $( '#sign-in-with-email-modal' ).modal( 'hide' );
   $( '.modal-backdrop' ).fadeOut();
 };
