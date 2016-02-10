@@ -16,7 +16,7 @@
   }
 }
 
-[data-social-login="facebook"] {
+[data-social-login="loginWithFacebook"] {
   background: $facebook;
 
   &:hover {
@@ -24,7 +24,7 @@
   }
 }
 
-[data-social-login="github"] {
+[data-social-login="loginWithGithub"] {
   background: $github;
 
   &:hover {
@@ -32,7 +32,7 @@
   }
 }
 
-[data-social-login="google"] {
+[data-social-login="loginWithGoogle"] {
   background: $google;
 
   &:hover {
@@ -40,7 +40,7 @@
   }
 }
 
-[data-social-login="twitter"] {
+[data-social-login="loginWithTwitter"] {
   background: $twitter;
 
   &:hover {
