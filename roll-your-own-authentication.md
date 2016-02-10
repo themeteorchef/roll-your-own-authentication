@@ -14,7 +14,7 @@
 - **Additional knowledge required**: [ES2015](https://themeteorchef.com/blog/what-is-es2015/) [basics](https://themeteorchef.com/snippets/common-meteor-patterns-in-es2015/), [the module pattern](https://themeteorchef.com/snippets/using-the-module-pattern-with-meteor/), [sending email](https://themeteorchef.com/snippets/using-the-email-package) 
 
 ### What are we building?
-Don Carlton Sales is a tiny sales team with a big heart. Don, the owner, has gotten in touch with us to see if we can help him out. Don is building an application for all of the member's of his sales team to manage their clients. Don, being a tech-savvy fellow, has asked us if we can set the app to allow for logging in with social accounts. Don is a big fan of sites like Facebook, but in his older age admits he has trouble remembering a lot of passwords. After seeing another site use "Login with Facebook," he knew it was a must-have for his sales team's app.
+Don Carlton Sales is a tiny sales team with a big heart. Don, the owner, has gotten in touch with us to see if we can help him out. Don is building an application for all of the members of his sales team to manage their clients. Don, being a tech-savvy fellow, has asked us if we can set the app to allow for logging in with social accounts. Don is a big fan of sites like Facebook, but in his older age admits he has trouble remembering a lot of passwords. After seeing another site use "Login with Facebook," he knew it was a must-have for his sales team's app.
 
 In this recipe, we're going to help Don out and get both oAuth-based and password-based login implemented in his application. As an added bonus, we've suggested that Don add a bit of personalization to his app and send out an email when anyone signs up. Don loved this idea and has given us a template he'd like to send out welcoming new members. As part of the sign up process, we'll send out an email with this information to give users a nice, polished user experience.
 
@@ -65,7 +65,7 @@ meteor add email
 ```
 The `email` package will give us the ability to send email from the server using the nifty `Email.send` method.
 
-### Setting up oAuth services
+### Setting up OAuth services
 Because our third-party sign in's are relying on _external_ services outside of our control, we need a way to identify our application with those services so they know their users are safe. Fortunately for us, some smarter folks in the past came up with a convenient system known as OAuth, or, "open authentication":
 
 > OAuth is an open standard to authorization. OAuth provides client applications a 'secure delegated access' to server resources on behalf of a resource owner. It specifies a process for resource owners to authorize third-party access to their server resources without sharing their credentials.
@@ -74,7 +74,7 @@ Because our third-party sign in's are relying on _external_ services outside of 
 
 What this essentially means is that by providing a service with a unique token for our application, we can make requests for information on behalf of the user. So for things like signing in, we can allow the user to use their email/password combination from another service (e.g. Facebook). We never store or touch that email/password, because OAuth implements a permissions system wherein users are prompted to log in to and accept or deny our access to their credentials. Pretty cool, right?
 
-Before we get anything wired up in our application, we'll want to spend some time getting the necessary permissions from oAuth providers. Permissions come in two forms: a client key and a secret key. In the next few sections, we'll look at how to set up the services we'll cover below individually. Our goal will be to map the credentials we get from each service into our [settings.json files](https://themeteorchef.com/snippets/making-use-of-settings-json/) to make configuration a breeze later. To get started, let's look at how our `settings.json` file will be structured.
+Before we get anything wired up in our application, we'll want to spend some time getting the necessary permissions from OAuth providers. Permissions come in two forms: a client key and a secret key. In the next few sections, we'll look at how to set up the services we'll cover below individually. Our goal will be to map the credentials we get from each service into our [settings.json files](https://themeteorchef.com/snippets/making-use-of-settings-json/) to make configuration a breeze later. To get started, let's look at how our `settings.json` file will be structured.
 
 #### Storing credentials in settings.json
 For each of the services that we'll cover below, we'll create "applications" which are assigned two unique values: a "client ID" and a "client secret." Because these values identify our application, it's important to keep them secure. If an attacker got a hold of them, they could potentially pretend to be our application and trick users. No bueno. To store them, we're going to rely on a [settings.json](https://themeteorchef.com/snippets/making-use-of-settings-json/) file. 
@@ -208,7 +208,7 @@ Everything you're presented with is pretty straightforward except for one tiny l
 Once you accept the Developer agreement and then click "Create your Twitter application," you'll be redirected to a screen detailing your application. To get your keys, just click the "Keys and Access Tokens" tab at the top of the screen to grab your Consumer Key and Secret to place in `settings.json`!
 
 ### Configuring oAuth services
-In order to start using the service we've just set up, we need to let our application know about them. The good news: we've take care of the hard part. Now, we need a way to "configure" each service we'll be using when Meteor starts up. To do this, we're going to write a simple module that we can call when Meteor starts, passing in our configuration from `settings.json`. First step, let's define our module (we'll paste the full contents below) and then see how to wire it up on startup.
+In order to start using the service we've just set up, we need to let our application know about them. The good news: we've taken care of the hard part. Now, we need a way to "configure" each service we'll be using when Meteor starts up. To do this, we're going to write a simple module that we can call when Meteor starts, passing in our configuration from `settings.json`. First step, let's define our module (we'll paste the full contents below) and then see how to wire it up on startup.
 
 <p class="block-header">/server/modules/configure-services.js</p>
 
@@ -228,9 +228,9 @@ const configure = () => {
 Modules.server.configureServices = configure;
 ```
 
-Not much here! In this file, we're defining a module that we'll call next like `Modules.server.configureServices()` following [the module pattern](https://themeteorchef.com/snippets/using-the-module-pattern-with-meteor/). We use this pattern because it gives structure to our code, but also works really well with the upcoming 1.3 release of Meteor which supports [ES2015 imports](http://www.2ality.com/2014/09/es6-modules-final.html).
+Not much here! In this file, we're defining a module that we'll call next like `Modules.server.configureServices()` following [the module pattern](https://themeteorchef.com/snippets/using-the-module-pattern-with-meteor/). We use this pattern because it gives structure to our code, but also works really well with the upcoming 1.3 release of Meteor which supports [ES2015 imports](http://exploringjs.com/es6/ch_modules.html).
 
-So what exactly is this doing? Well, Meteor stores all of the configurations for oAuth logins in a MongoDB collection called `meteor_accounts_loginServiceConfiguration`. To make this a bit easier to consume, using the `service-configuration` package we installed earlier, we can call the `upsert` method on this collection. When we do, we pass in the name of the service that we want to upsert against—meaning, if the item does not exist, insert it, and if it does, update it—along with the values we want to set for that service. We do this in a loop over the services we've added to the `oAuth` object in our `settings.json` file. 
+So what exactly is this doing? Well, Meteor stores all of the configurations for OAuth logins in a MongoDB collection called `meteor_accounts_loginServiceConfiguration`. To make this a bit easier to consume, using the `service-configuration` package we installed earlier, we can call the `upsert` method on this collection. When we do, we pass in the name of the service that we want to upsert against—meaning, if the item does not exist, insert it, and if it does, update it—along with the values we want to set for that service. We do this in a loop over the services we've added to the `oAuth` object in our `settings.json` file. 
 
 This is where our earlier work pays off. Because we've labeled the properties for each of the services in our `settings.json` file to match what Meteor expects in this collection, we can just loop over them and insert them into the database! That's it. Now, when we call this module, our services will be configured in the app. Where do we call this? Let's take a peek.
 
@@ -257,7 +257,7 @@ Lucky us! Because we're relying on [Base](https://themeteorchef.com/base/) for t
   <p>In order for this to work, make sure to start your Meteor app with the settings file specified using <code>meteor --settings settings.json</code>.</p>
 </div>
 
-Good progress! Now we're ready to start making use of all this stuff. Let's push on, wiring up the buttons that will actually fire each of our oAuth logins.
+Good progress! Now we're ready to start making use of all this stuff. Let's push on, wiring up the buttons that will actually fire each of our OAuth logins.
 
 ### Wiring up oAuth login buttons
 Let's get started on our UI. For this step, we're going to add the markup for all of the buttons our users will be able to click to login. So it's there for the next step, we'll also add in a button for signing in with email but get it working in the next section.
@@ -307,7 +307,7 @@ Let's get started on our UI. For this step, we're going to add the markup for al
 </template>
 
 ```
-Mostly repetition! All we're adding here is a button for each of our sign in types. Pay close attention. Notice that on each of the oAuth-based login options, we've added a `data-social-login` attribute with the corresponding service name's login method (`loginWith<Service>` comes from each of the accounts packages we installed earlier) passed as the value. What's this? Our next task! We'll use this to identify which buttons correspond to which oAuth sign in we need to call. Let's see the code!
+Mostly repetition! All we're adding here is a button for each of our sign in types. Pay close attention. Notice that on each of the OAuth-based login options, we've added a `data-social-login` attribute with the corresponding service name's login method (`loginWith<Service>` comes from each of the accounts packages we installed earlier) passed as the value. What's this? Our next task! We'll use this to identify which buttons correspond to which oAuth sign in we need to call. Let's see the code!
 
 <p class="block-header">/client/templates/public/index.js</p>
 
@@ -333,7 +333,7 @@ Template.index.events({
 
 ```
 
-Interesting! We're doing a lot of consolidation of efforts in this one event handler. Why is that important? Well, we technically need to call four different methods, one for each of the services we support. To avoid having four different event handlers, we consolidate everything relying on the `data-social-login` attribute that we added to each of our oAuth sign in buttons.
+Interesting! We're doing a lot of consolidation of efforts in this one event handler. Why is that important? Well, we technically need to call four different methods, one for each of the services we support. To avoid having four different event handlers, we consolidate everything relying on the `data-social-login` attribute that we added to each of our OAuth sign in buttons.
 
 To "switch" between each of the different platforms, we open up our click event (notice that we're watching for clicks on _any_ element with a `data-social-login` attribute) by looking at the clicked elements `data-social-login attribute`. Inside, we get clever. First, we grab the clicked buttons `data-social-login` value (remember, this is the method we'll need to call) and assign it to a `service` variable. Just beneath that, we create a "global" `options` object that we can pass to each call.
 
@@ -341,7 +341,7 @@ Just before we make the call, we double check if we're trying to login with Twit
 
 This is the cool part. Notice that we're simply calling `Meteor[ service ]`. How is this working? Well, each of our login methods are defined directly on the `Meteor` object, so, what we're really doing here is calling `Meteor.loginWith<Service>`. Neat, eh? All of the methods are fairly uniform, so it makes sense to have a single call and treat the method name as a variable. To make it work, we just pass in the service name to get the appropriate method and feed in our `options` object as the first argument. 
 
-All of our methods have a uniform callback, too, so we make sure to handle the error and we're done! Believe it or not, this is all of the code we need to get our social logins working. At this point—if our configurations were done properly earlier—we have a working oAuth login system! Pretty wild. We're not quite done, though. Next, we also want to add support for password-based logins for users who _do not_ want to use oAuth. Because oAuth sign in also doubles as a sign up, we'll see how to allow users to both sign up _and_ login using the same form in the next section. Times a wastin', let's get to it!
+All of our methods have a uniform callback, too, so we make sure to handle the error and we're done! Believe it or not, this is all of the code we need to get our social logins working. At this point—if our configurations were done properly earlier—we have a working OAuth login system! Pretty wild. We're not quite done, though. Next, we also want to add support for password-based logins for users who _do not_ want to use OAuth. Because OAuth sign in also doubles as a sign up, we'll see how to allow users to both sign up _and_ login using the same form in the next section. Times a wastin', let's get to it!
 
 ### Wiring up a login/signup modal
 Since we already have our button wired up for our sign in modal—we'll be relying on Boostrap's `data-toggle` and `data-target` attributes to open this for us—our next step is to wire up the modal that will actually be fired when the button is clicked. Real quick, we need to make sure this is included in our `index.html` template.
@@ -403,9 +403,7 @@ See it up there at the top? `{{> signInWithEmailModal}}` is what we'll be workin
 </template>
 ```
 
-Pretty basic stuff here. The part to pay attention to is inside of the `<form></form>` element. Here, we're asking our user for two pieces of input: an email address and a password. This isn't terribly exciting, but if we look down in the `.modal-footer` element, we see a bit of trickery going on. Two submit buttons?! Yep. Remember, our goal is to get our password sign in as close to our oAuth sign in as possible. Here, we're making it possible to either sign up or log in using _the same form_. Next, we'll wire up a way behind the scenes to find out which button the user clicked and then route them through the correct process. Cool, eh? Similar to our `data-social-login` trick, make note of the `data-auth-type` attribute on both of these buttons.
-
-Let's get this form wired up.
+Pretty basic stuff here. The part to pay attention to is inside of the `<form></form>` element. Here, we're asking our user for two pieces of input: an email address and a password. This isn't terribly exciting, but if we look down in the `.modal-footer` element, we see a bit of trickery going on. Two submit buttons?! Yep. Remember, our goal is to get our password sign in as close to our OAuth sign in as possible. Here, we're making it possible to either sign up or log in using _the same form_. Next, we'll wire up a way behind the scenes to find out which button the user clicked and then route them through the correct process. Cool, eh? Similar to our `data-social-login` trick, make note of the `data-auth-type` attribute on both of these buttons.
 
 <p class="block-header">/client/templates/public/sign-in-with-email-modal.js</p>
 
@@ -433,7 +431,7 @@ Template.signInWithEmailModal.events({
 });
 ```
 
-Underwhelming? Well, there's a lot going on here but we've worked hard to condense it down. First, let's look at our `events` block. Notice that in here, we're using a nearly _identical_ process for detecting the sign in type—sign up or log in—as we did for detecting which social login button was pressed. Instead of relying on a set of login methods here, though, all we're doing is setting a [ReactiveVar](https://themeteorchef.com/snippets/reactive-dict-reactive-vars-and-session-variables/). This is a reactive data source similar to a Session variable, but instead of being global like a Session, it's bound to the current template's instance. Once the template is destroyed, so is the variable! This is good for keeping your global namespace clean but also for helping to reason about your application later.
+Underwhelming? Well, there's a lot going on here but we've worked hard to condense it down. First, let's look at our `events` block. Notice that in here, we're using a nearly _identical_ process for detecting the sign in type—sign up or log in—as we did for detecting which social login button was pressed. Instead of relying on a set of login methods here, though, all we're doing is setting a [ReactiveVar](https://themeteorchef.com/snippets/reactive-dict-reactive-vars-and-session-variables/#tmc-reactive-variables). This is a reactive data source similar to a Session variable, but instead of being global like a Session, it's bound to the current template's instance. Once the template is destroyed, so is the variable! This is good for keeping your global namespace clean but also for helping to reason about your application later.
 
 Just beneath this, notice that we're simply calling `event.preventDefault()` on our form's submission event. Why's that? This is our next step. If we look at our template's `onRendered` function, you can see that we're calling to a module called `handleAuthentication` and passing it two things: the selector for our form and the current template instance. This may be a bit confusing, so let's hop over there now and see what it's doing.
 
@@ -521,11 +519,11 @@ let _hideModal = () => {
 Modules.client.handleAuthentication = handleAuthentication;
 ```
 
-Woah! What is all of this?! This is our process for getting a user both signed up _and_ logged in for our application. It's pretty neat. Similar to earlier when we worked on the configuration of our oAauth services, here, we're relying on [the module pattern](https://themeteorchef.com/snippets/using-the-module-pattern-with-meteor/) to organize our code.
+Woah! What is all of this?! This is our process for getting a user both signed up _and_ logged in for our application. It's pretty neat. Similar to earlier when we worked on the configuration of our OAauth services, here, we're relying on [the module pattern](https://themeteorchef.com/snippets/using-the-module-pattern-with-meteor/) to organize our code.
 
 So...what exactly is happening here? Well, if we look at the function bound to our module's namepsace (the `Modules.client.handleAuthentication = handleAuthentication;` part) we can see that we start way up at the top of our file. Our goal here is to handle a bit of validation on our form _before_ we determine whether or not we're trying to sign up or log in. For our validation process, we're relying on the [jQuery validation](https://themeteorchef.com/snippets/validating-forms-with-jquery-validation/) library which gives us a simple API for validating our forms.
 
-Our first step is to attach our validation. Remember, all of this code is running when our `signInWithEmailModal` template is rendered. That means that our validation will be attached then. To make it work, we take in the selector we passed as part of our module invoication and get it over to the `_validate()` method which wraps the jQuery validation librarie's invoication call `$( form ).validate()`. Inside of our call to `.validate()`, we're passing a call to another function `validation()`. This is down below. This method is responsible for returning the "configuration" for our form's validation. It includes all of the rules and error messages that we'll display to users. It also includes something really neat: a method called `submitHandler`.
+Our first step is to attach our validation. Remember, all of this code is running when our `signInWithEmailModal` template is rendered. That means that our validation will be attached then. To make it work, we take in the selector we passed as part of our module invocation and get it over to the `_validate()` method which wraps the jQuery validation library's invocation call `$( form ).validate()`. Inside of our call to `.validate()`, we're passing a call to another function `validation()`. This is down below. This method is responsible for returning the "configuration" for our form's validation. It includes all of the rules and error messages that we'll display to users. It also includes something really neat: a method called `submitHandler`.
 
 Here, `submitHandler` is being used in place of our form's standard submit event (remember, we prevented this earlier). All it's doing in our code here is making a call to another method `_handleAuth()` which is where our module really starts to shine. At this point, we're calling this method if our form passes validation. If it has, that means that we can trust the inputs in the form and pull their values.
 
@@ -538,9 +536,9 @@ If we jump back up, we're doing something very similar for our call to `_loginUs
 With this in place, we're done! Our modal will now allow our user to both login and sign up in one spot. Pretty neat, right? Next up, we need to do a litlte bit of work on figuring out who are user _is_.
 
 ### Getting the user's email
-We're almost done! Just a few bits of polish. First up is figuring out our user's identity. Unfortunately, there is no one-size-fits all solution for getting things like our user's email address when we're using multiple types of account providers. The discrepancy is small, but enough to drive you nuts the first few times you box with it. The issue is that when we call something like `Meteor.user()`, in a password-based account we may expect a field like `emails` to be available on the user. 
+We're almost done! Just a few bits of polish. First up is figuring out our user's identity. Unfortunately, there is no one-size-fits-all solution for getting things like our user's email address when we're using multiple types of account providers. The discrepancy is small, but enough to drive you nuts the first few times you box with it. The issue is that when we call something like `Meteor.user()`, in a password-based account we may expect a field like `emails` to be available on the user. 
 
-When using oAuth, though, this isn't the case. User emails are stored _per_ service like `services.<serviceName>.email`. Because of this, we need to have a means for getting the user's email—or some fallback—no matter what method they used for signing in. To do this, we need to write a bit of code. For our sake, we're going to bring in the module pattern again. Let's take a look at what we're using and step through it.
+When using OAuth, though, this isn't the case. User emails are stored _per_ service like `services.<serviceName>.email`. Because of this, we need to have a means for getting the user's email—or some fallback—no matter what method they used for signing in. To do this, we need to write a bit of code. For our sake, we're going to bring in the module pattern again. Let's take a look at what we're using and step through it.
 
 <p class="block-header">/both/modules/get-user-identity.js</p>
 
@@ -607,7 +605,7 @@ That's it! All of the work we did in our module is coming to roost here. We simp
 </template>
 ```
 
-See it in there? We simply call `{{userIdentity}}` and our user's email or name is displayed! Easy peasy. Now for the slightly more difficult part: a publication. We want to be careful with this one because we don't want to accidentally publish all of users information to the client. Instead, we only want to publish the _current_ user's information and _only_ when they're logged in. To do this, we're going to add a bit of JavaScript to our `authenticatedNavigation` template.
+See it in there? We simply call `{{userIdentity}}` and our user's email or name is displayed! Easy peasy. Now for the slightly more difficult part: a publication. We want to be careful with this one because we don't want to accidentally publish all of our users information to the client. Instead, we only want to publish the _current_ user's information and _only_ when they're logged in. To do this, we're going to add a bit of JavaScript to our `authenticatedNavigation` template.
 
 <p class="block-header">/client/templates/globals/authenticated-navigation.js</p>
 
@@ -682,7 +680,7 @@ Nothing too wild going on here. From a high-level, what we're doing here is taki
 
 Up in our `send` method, we begin by compiling the data that we'll want to render into our template. Notice that here, we make use of our `getUserIdentity` module again. We also introduce a new value in our `settings.json` file's `public` object called `domain`. This is optional and is simply used to allow for sending a link back to our application in the email to users. We make this based on our `settings.json` file to allow us to toggle between our development and production environments with ease.
 
-Next, using the `meteorhacks:ssr` package [included in Base](https://themeteorchef.com/base/packages-included/), we'll compile [an HTML template included in the source of this recipe](), piping in some information about our user in the `_getHTMLForEmail` method. Inside, we give the `SSR.compileTemplate` method a name for our template (we just use the file name for this, it's only used as an identifier for the `render` step) which also doubles as the name of the file for out HTML template in our source code. In the second argument, we pass our freshly minted `data` object. From here, `SSR.render()` takes care of the rest. It takes the compiled HTML template, pipes in the data we've sent to it, and returns an HTML string for our email. Neat! 
+Next, using the `meteorhacks:ssr` package [included in Base](https://themeteorchef.com/base/packages-included/), we'll compile [an HTML template included in the source of this recipe](https://github.com/themeteorchef/roll-your-own-authentication/blob/master/code/private/email/templates/welcome-email.html), piping in some information about our user in the `_getHTMLForEmail` method. Inside, we give the `SSR.compileTemplate` method a name for our template (we just use the file name for this, it's only used as an identifier for the `render` step) which also doubles as the name of the file for our HTML template in our source code. In the second argument, we pass our freshly minted `data` object. From here, `SSR.render()` takes care of the rest. It takes the compiled HTML template, pipes in the data we've sent to it, and returns an HTML string for our email. Neat! 
 
 <div class="note">
   <h3>Configuring Email <i class="fa fa-warning"></i></h3>
@@ -723,7 +721,7 @@ A few things to note here. First, when we call this method, we're technically sh
 
 Back to our course of action, we can see our method being put to use near the top of our call. Simple as that! All we need to do is call `sendWelcomeEmail`, passing in the expected `user` information and `profile` information. Now, whenever a user signs up for our application, they'll get a neat welcome email!
 
-Give yourself a pat on the back, we're all done! We now have a fully functional oAuth and password-based login system.
+Give yourself a pat on the back, we're all done! We now have a fully functional OAuth and password-based login system.
 
 ### Wrap up & summary
 In this recipe, we learned how to wire up our own authentication workflow in Meteor. We learned how to set up support for oAuth login providers, as well as add the means for both signing up and logging into our application using an email and password combination. We also learned how to create a custom helper to delegate finding our user's email address regardless of account type. Finally, we learned how to tap into Meteor's `Accounts.onCreateUser` callback to send off a fancy email whenever anyone joins our app.
